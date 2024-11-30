@@ -56,10 +56,10 @@ export function VoiceChat() {
     onDisconnect: () => {
       // Connection status is shown in the UI
     },
-    onMessage: (message: string) => {
+    onMessage: (data: { message: string; source: string }) => {
       setTranscript(prev => [...prev, {
         speaker: 'Assistant',
-        text: message
+        text: data.message
       }]);
     },
     onError: (message: string) => {
