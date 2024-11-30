@@ -78,7 +78,7 @@ export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerP
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isActive, audioData]);
+  }, [audioData, isAgentSpeaking]);
 
   return (
     <canvas
