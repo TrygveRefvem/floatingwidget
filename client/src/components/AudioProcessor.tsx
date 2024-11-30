@@ -23,8 +23,8 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
     }
   }, [isActive]);
 
-  // Cleanup function
-  const cleanup = async () => {
+  // Synchronous cleanup function
+  const cleanup = () => {
     console.log('Cleaning up audio resources');
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -35,19 +35,26 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
       sourceRef.current = null;
     }
     if (audioContextRef.current?.state !== 'closed') {
-      await audioContextRef.current?.close();
+      audioContextRef.current?.close();
       audioContextRef.current = null;
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+
     if (!isProcessing) {
-      return cleanup();
+      cleanup();
+      return;
     }
 
     const initializeAudio = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!mounted) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
         streamRef.current = stream;
 
         const audioContext = new AudioContext();
@@ -63,9 +70,9 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
         analyserRef.current = analyser;
 
         const dataArray = new Float32Array(analyser.frequencyBinCount);
-
+        
         const processAudio = () => {
-          if (!analyser || !isActive) {
+          if (!analyser || !isActive || !mounted) {
             return;
           }
 
@@ -92,7 +99,7 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
           }
 
           // Continue the animation frame loop while active
-          if (isActive) {
+          if (isActive && mounted) {
             requestAnimationFrame(processAudio);
           }
         };
@@ -104,11 +111,10 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
     };
 
     initializeAudio();
-    
+
     return () => {
-      if (!isActive) {
-        cleanup();
-      }
+      mounted = false;
+      cleanup();
     };
   }, [isActive, isProcessing, onAudioData, onVoiceActivityChange]);
 
