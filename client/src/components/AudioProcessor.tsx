@@ -12,6 +12,24 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Cleanup function
+  const cleanup = async () => {
+    console.log('Cleaning up audio resources');
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    if (audioContextRef.current?.state !== 'closed') {
+      await audioContextRef.current?.close();
+      audioContextRef.current = null;
+    }
+    setIsProcessing(false);
+  };
 
   useEffect(() => {
     if (isActive && !isProcessing) {
@@ -49,7 +67,13 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
             // Lower threshold for better sensitivity
             const isVoiceActive = rms > 0.005;
             
-            console.log('Audio processing:', { rms, isVoiceActive });
+            console.log('Audio state:', {
+              contextState: audioContextRef.current?.state,
+              isProcessing,
+              rms,
+              isVoiceActive,
+              timestamp: new Date().toISOString()
+            });
             
             // Pass audio data for visualization
             onAudioData?.(dataArray);
@@ -78,23 +102,12 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
 
       initializeAudio();
     } else if (!isActive && isProcessing) {
-      // Cleanup
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      setIsProcessing(false);
+      cleanup();
     }
 
+    // Cleanup on component unmount or when isActive changes
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      cleanup();
     };
   }, [isActive, isProcessing, onAudioData, onVoiceActivityChange]);
 

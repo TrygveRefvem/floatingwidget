@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { AudioProcessor } from './AudioProcessor';
+import { ErrorBoundary } from './ErrorBoundary';
 
 export function VoiceChat() {
   const { toast } = useToast();
@@ -105,7 +106,8 @@ export function VoiceChat() {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="w-full">
-        <AudioProcessor 
+        <ErrorBoundary>
+          <AudioProcessor 
           isActive={conversation.status === 'connected'}
           onVoiceActivityChange={(active) => {
             console.log('Voice activity changed:', active);
@@ -119,6 +121,7 @@ export function VoiceChat() {
             setAudioData(data);
           }}
         />
+        </ErrorBoundary>
         <AudioVisualizer 
           isActive={conversation.status === 'connected'}
           audioData={audioData}
