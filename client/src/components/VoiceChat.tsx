@@ -57,9 +57,7 @@ export function VoiceChat() {
   }, [conversation]);
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6">
           <div className="w-full max-w-sm">
             <AudioVisualizer 
               isActive={conversation.status === 'connected'} 
@@ -100,7 +98,5 @@ export function VoiceChat() {
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
   );
 }
