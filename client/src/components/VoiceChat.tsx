@@ -6,11 +6,17 @@ import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
 import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
 
+interface TranscriptMessage {
+  speaker: 'You' | 'Assistant';
+  text: string;
+}
+
 export function VoiceChat() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
   const [agentId, setAgentId] = useState<string | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
 
   useEffect(() => {
     // Check browser compatibility
@@ -42,9 +48,19 @@ export function VoiceChat() {
   const conversation = useConversation({
     onConnect: () => {
       setIsInitializing(false);
+      setTranscript(prev => [...prev, {
+        speaker: 'Assistant',
+        text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
+      }]);
     },
     onDisconnect: () => {
       // Connection status is shown in the UI
+    },
+    onMessage: (message: string) => {
+      setTranscript(prev => [...prev, {
+        speaker: 'Assistant',
+        text: message
+      }]);
     },
     onError: (message: string) => {
       toast({
@@ -68,6 +84,7 @@ export function VoiceChat() {
 
     try {
       setIsInitializing(true);
+      setTranscript([]);
       
       // Request microphone access
       try {
@@ -103,16 +120,31 @@ export function VoiceChat() {
 
   return (
     <div className="flex flex-col items-center gap-4">
+      <div className="w-full h-[200px] bg-gray-50 rounded-md p-3 overflow-y-auto">
+        {transcript.map((message, index) => (
+          <div key={index} className="mb-2">
+            <span className="font-medium">{message.speaker}: </span>
+            {message.text}
+          </div>
+        ))}
+      </div>
+
       <div className="w-full">
         <ErrorBoundary>
           <AudioProcessor 
-          isActive={conversation.status === 'connected'}
-          onVoiceActivityChange={(active) => {
-            console.log('Voice activity changed:', active);
-            setIsUserSpeaking(active);
-          }}
-          isSpeaking={conversation.isSpeaking}
-        />
+            isActive={conversation.status === 'connected'}
+            onVoiceActivityChange={(active) => {
+              console.log('Voice activity changed:', active);
+              setIsUserSpeaking(active);
+              if (active) {
+                setTranscript(prev => [...prev, {
+                  speaker: 'You',
+                  text: '...'
+                }]);
+              }
+            }}
+            isSpeaking={conversation.isSpeaking}
+          />
         </ErrorBoundary>
       </div>
 

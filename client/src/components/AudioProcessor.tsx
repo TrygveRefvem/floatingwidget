@@ -6,7 +6,7 @@ interface AudioProcessorProps {
   onVoiceActivityChange?: (isActive: boolean) => void;
 }
 
-export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, onAudioData }: AudioProcessorProps) {
+export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: AudioProcessorProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -93,13 +93,15 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
       }
     };
 
-    initializeAudio();
+    if (isActive) {
+      initializeAudio();
+    }
 
     return () => {
       mounted = false;
       cleanup();
     };
-  }, [onAudioData, onVoiceActivityChange]);
+  }, [isActive, onVoiceActivityChange]);
 
   return null;
 }
