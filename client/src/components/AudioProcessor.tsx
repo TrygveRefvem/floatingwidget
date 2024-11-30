@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface AudioProcessorProps {
   isActive: boolean;
@@ -12,16 +12,7 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [isProcessing, setIsProcessing] = useState(true);
   let voiceDetectionTimeout: number;
-
-  useEffect(() => {
-    if (isActive) {
-      setIsProcessing(true);
-    } else {
-      setIsProcessing(false);
-    }
-  }, [isActive]);
 
   // Synchronous cleanup function
   const cleanup = () => {
@@ -42,11 +33,6 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
 
   useEffect(() => {
     let mounted = true;
-
-    if (!isProcessing) {
-      cleanup();
-      return;
-    }
 
     const initializeAudio = async () => {
       try {
@@ -72,21 +58,20 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
         const dataArray = new Float32Array(analyser.frequencyBinCount);
         
         const processAudio = () => {
-          if (!analyser || !isActive || !mounted) {
+          if (!analyser || !mounted) {
             return;
           }
 
           analyser.getFloatTimeDomainData(dataArray);
+          onAudioData?.(dataArray);
           
           // Calculate RMS with increased sensitivity
           const rms = Math.sqrt(
             dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
           );
 
-          // Lower threshold and ensure continuous processing
+          // Lower threshold for better voice detection
           const isVoiceActive = rms > 0.001;
-          
-          onAudioData?.(dataArray);
           
           if (isVoiceActive) {
             if (voiceDetectionTimeout) {
@@ -98,8 +83,8 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
             }, 500) as unknown as number;
           }
 
-          // Continue the animation frame loop while active
-          if (isActive && mounted) {
+          // Continue processing while mounted
+          if (mounted) {
             requestAnimationFrame(processAudio);
           }
         };
@@ -116,7 +101,7 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
       mounted = false;
       cleanup();
     };
-  }, [isActive, isProcessing, onAudioData, onVoiceActivityChange]);
+  }, [onAudioData, onVoiceActivityChange]);
 
   return null;
 }
