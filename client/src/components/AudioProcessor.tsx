@@ -6,11 +6,14 @@ interface AudioProcessorProps {
   onVoiceActivityChange?: (isActive: boolean) => void;
 }
 
+const MIN_VOICE_DURATION = 100; // ms
+
 export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: AudioProcessorProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const lastVoiceDetectionRef = useRef<number>(0);
   let voiceDetectionTimeout: number;
 
   // Synchronous cleanup function
@@ -63,22 +66,26 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: 
 
           analyser.getFloatTimeDomainData(dataArray);
           
-          // Calculate RMS with increased sensitivity
+          // Calculate RMS with adjusted sensitivity
           const rms = Math.sqrt(
             dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
           );
 
-          // Lower threshold for better voice detection
-          const isVoiceActive = rms > 0.001;
+          // Higher threshold for reduced sensitivity
+          const isVoiceActive = rms > 0.01;
           
+          const now = Date.now();
           if (isVoiceActive) {
+            if (now - lastVoiceDetectionRef.current > MIN_VOICE_DURATION) {
+              onVoiceActivityChange?.(true);
+              lastVoiceDetectionRef.current = now;
+            }
             if (voiceDetectionTimeout) {
               clearTimeout(voiceDetectionTimeout);
             }
-            onVoiceActivityChange?.(true);
             voiceDetectionTimeout = window.setTimeout(() => {
               onVoiceActivityChange?.(false);
-            }, 500) as unknown as number;
+            }, 300) as unknown as number;
           }
 
           // Continue processing while mounted
