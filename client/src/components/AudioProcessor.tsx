@@ -46,15 +46,22 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
               dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
             );
 
-            // Adjust threshold as needed
-            const isVoiceActive = rms > 0.01;
+            // Lower threshold for better sensitivity
+            const isVoiceActive = rms > 0.005;
+            
+            console.log('Audio processing:', { rms, isVoiceActive });
+            
+            // Pass audio data for visualization
+            onAudioData?.(dataArray);
 
             if (isVoiceActive) {
               if (voiceDetectionTimeout) {
                 clearTimeout(voiceDetectionTimeout);
               }
+              console.log('Voice activity detected');
               onVoiceActivityChange?.(true);
               voiceDetectionTimeout = window.setTimeout(() => {
+                console.log('Voice activity timeout');
                 onVoiceActivityChange?.(false);
               }, 500) as unknown as number;
             }

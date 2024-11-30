@@ -107,8 +107,17 @@ export function VoiceChat() {
       <div className="w-full">
         <AudioProcessor 
           isActive={conversation.status === 'connected'}
-          onVoiceActivityChange={setIsUserSpeaking}
-          onAudioData={setAudioData}
+          onVoiceActivityChange={(active) => {
+            console.log('Voice activity changed:', active);
+            setIsUserSpeaking(active);
+          }}
+          onAudioData={(data) => {
+            console.log('Audio data updated:', { 
+              length: data.length,
+              timestamp: new Date().toISOString()
+            });
+            setAudioData(data);
+          }}
         />
         <AudioVisualizer 
           isActive={conversation.status === 'connected'}

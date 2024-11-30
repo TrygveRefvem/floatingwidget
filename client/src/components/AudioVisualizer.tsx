@@ -20,6 +20,11 @@ export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       if (isActive && audioData) {
+        console.log('Visualizing audio data:', { 
+          dataLength: audioData.length,
+          maxValue: Math.max(...Array.from(audioData.map(Math.abs)))
+        });
+        
         const bars = 50;
         const step = Math.floor(audioData.length / bars);
         const barWidth = canvas.width / bars;
@@ -32,8 +37,8 @@ export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
           }
           const average = sum / step;
           
-          // Scale the height (adjust multiplier as needed)
-          const height = average * canvas.height * 5;
+          // Increased scaling for better visualization
+          const height = average * canvas.height * 10;
           const x = i * barWidth;
           const y = canvas.height - height;
           
