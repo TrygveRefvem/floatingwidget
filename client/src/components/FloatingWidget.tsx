@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { VoiceChat } from './VoiceChat';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function FloatingWidget() {
@@ -10,7 +10,11 @@ export function FloatingWidget() {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {isExpanded ? (
-        <div className="bg-white rounded-lg shadow-lg w-[400px] transform transition-all duration-300 ease-in-out">
+        <div className={cn(
+          "bg-white rounded-[20px] shadow-lg w-[320px]",
+          "transform transition-all duration-300 ease-in-out",
+          "border border-gray-100"
+        )}>
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <img 
@@ -22,13 +26,13 @@ export function FloatingWidget() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsExpanded(false)}
-                className="hover:bg-gray-100"
+                className="hover:bg-gray-100 rounded-full"
               >
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </div>
             <VoiceChat />
-            <div className="text-center text-xs text-gray-500 mt-4">
+            <div className="text-center text-xs text-gray-400 mt-4">
               Powered by ElevenLabs Conversational AI
             </div>
           </div>
@@ -40,13 +44,10 @@ export function FloatingWidget() {
             "h-16 w-16 rounded-full shadow-lg",
             "bg-[#4CAF50] hover:bg-[#45a049]",
             "transform transition-all duration-300 ease-in-out",
-            "flex flex-col items-center justify-center gap-1"
+            "flex items-center justify-center"
           )}
         >
-          <div className="text-sm text-center leading-tight">
-            Trenger du hjelp?
-          </div>
-          <ChevronUp className="h-4 w-4" />
+          <div className="text-2xl font-bold">iB</div>
         </Button>
       )}
     </div>

@@ -2,9 +2,8 @@ import { useCallback, useState } from 'react';
 import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Phone, PhoneOff, Loader2 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
-import { Card, CardContent } from '@/components/ui/card';
 
 export function VoiceChat() {
   const { toast } = useToast();
@@ -25,7 +24,7 @@ export function VoiceChat() {
         variant: "destructive",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Feil",
         description: error.message,
@@ -57,46 +56,52 @@ export function VoiceChat() {
   }, [conversation]);
 
   return (
-    <div className="flex flex-col items-center gap-6">
-          <div className="w-full max-w-sm">
-            <AudioVisualizer 
-              isActive={conversation.status === 'connected'} 
-            />
-          </div>
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-full">
+        <AudioVisualizer 
+          isActive={conversation.status === 'connected'} 
+        />
+      </div>
 
-          <div className="flex gap-4">
-            <Button
-              onClick={startConversation}
-              disabled={conversation.status === 'connected' || isInitializing}
-              className="bg-[#4CAF50] hover:bg-[#45a049]"
-            >
-              {isInitializing ? (
+      <div className="w-full flex justify-center">
+        {conversation.status === 'connected' ? (
+          <Button
+            onClick={stopConversation}
+            className="bg-black hover:bg-gray-800 rounded-full px-8"
+          >
+            <PhoneOff className="w-4 h-4 mr-2" />
+            Avslutt samtale
+          </Button>
+        ) : (
+          <Button
+            onClick={startConversation}
+            disabled={isInitializing}
+            className="bg-black hover:bg-gray-800 rounded-full px-8"
+          >
+            {isInitializing ? (
+              <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Mic className="w-4 h-4 mr-2" />
-              )}
-              {isInitializing ? 'Kobler til...' : 'Start samtale'}
-            </Button>
-
-            <Button
-              onClick={stopConversation}
-              disabled={conversation.status !== 'connected'}
-              variant="destructive"
-            >
-              <MicOff className="w-4 h-4 mr-2" />
-              Avslutt samtale
-            </Button>
-          </div>
-
-          <div className="text-sm text-gray-500">
-            {conversation.status === 'connected' ? (
-              conversation.isSpeaking ? 
-                'Assistenten snakker...' : 
-                'Assistenten lytter...'
+                Kobler til...
+              </>
             ) : (
-              'Klar til å starte samtale'
+              <>
+                <Phone className="w-4 h-4 mr-2" />
+                Start samtale
+              </>
             )}
-          </div>
-        </div>
+          </Button>
+        )}
+      </div>
+
+      <div className="text-sm text-gray-500 text-center">
+        {conversation.status === 'connected' ? (
+          conversation.isSpeaking ? 
+            'Assistenten snakker...' : 
+            'Assistenten lytter...'
+        ) : (
+          'Klar til å starte samtale'
+        )}
+      </div>
+    </div>
   );
 }
