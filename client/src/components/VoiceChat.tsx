@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,34 @@ import { AudioVisualizer } from './AudioVisualizer';
 export function VoiceChat() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
+  const [agentId, setAgentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check browser compatibility
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({
+        title: "Ikke støttet",
+        description: "Din nettleser støtter ikke talesamtaler. Vennligst bruk en moderne nettleser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Fetch agent configuration
+    fetch('/api/elevenlabs/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        setAgentId(data.agentId);
+      })
+      .catch(error => {
+        toast({
+          title: "Konfigurasjonsfeil",
+          description: "Kunne ikke laste inn nødvendig konfigurasjon",
+          variant: "destructive",
+        });
+      });
+  }, [toast]);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -35,21 +63,45 @@ export function VoiceChat() {
   });
 
   const startConversation = useCallback(async () => {
+    if (!agentId) {
+      toast({
+        title: "Konfigurasjonsfeil",
+        description: "Mangler nødvendig konfigurasjon for å starte samtalen",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsInitializing(true);
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Request microphone access
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (error) {
+        if (error instanceof DOMException) {
+          if (error.name === 'NotAllowedError') {
+            throw new Error('Mikrofontilgang ble nektet. Vennligst gi tilgang til mikrofonen for å starte samtalen.');
+          } else if (error.name === 'NotFoundError') {
+            throw new Error('Ingen mikrofon funnet. Vennligst koble til en mikrofon og prøv igjen.');
+          }
+        }
+        throw error;
+      }
+
+      // Start conversation session
       await conversation.startSession({
-        agentId: process.env.ELEVENLABS_AGENT_ID!,
+        agentId: agentId,
       });
     } catch (error) {
       toast({
         title: "Feil",
-        description: "Kunne ikke starte samtalen. Sjekk mikrofoninnstillingene dine.",
+        description: error instanceof Error ? error.message : "Kunne ikke starte samtalen. Vennligst prøv igjen.",
         variant: "destructive",
       });
       setIsInitializing(false);
     }
-  }, [conversation, toast]);
+  }, [conversation, toast, agentId]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
