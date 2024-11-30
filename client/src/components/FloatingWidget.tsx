@@ -18,7 +18,7 @@ export function FloatingWidget() {
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <img 
-                src="/public/logobank.png" 
+                src="/logobank.png" 
                 alt="Instabank" 
                 className="h-6"
               />
@@ -38,16 +38,16 @@ export function FloatingWidget() {
         <Button
           onClick={() => setIsExpanded(true)}
           className={cn(
-            "h-16 w-16 rounded-full shadow-lg",
+            "h-16 w-16 rounded-full shadow-lg overflow-hidden",
             "bg-[#4CAF50] hover:bg-[#45a049]",
             "transform transition-all duration-300 ease-in-out",
-            "flex items-center justify-center p-0"
+            "flex items-center justify-center p-2"
           )}
         >
           <img 
-            src="/public/smalllogo.png" 
+            src="/smalllogo.png" 
             alt="iB"
-            className="h-12 w-12" 
+            className="h-8 w-8 object-contain" 
           />
         </Button>
       )}
