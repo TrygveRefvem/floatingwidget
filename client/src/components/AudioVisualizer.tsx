@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 interface AudioVisualizerProps {
-  isActive: boolean;
   audioData?: Float32Array;
+  isAgentSpeaking?: boolean;
 }
 
-export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
+export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
 
@@ -19,7 +19,7 @@ export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (isActive && audioData) {
+      if (audioData) {
         console.log('Visualizing audio data:', { 
           dataLength: audioData.length,
           maxValue: Math.max(...Array.from(audioData.map(Math.abs)))
@@ -38,7 +38,7 @@ export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
           const average = sum / step;
           
           // Increased scaling for better visualization
-          const height = average * canvas.height * 10;
+          const height = average * canvas.height * 15;
           const x = i * barWidth;
           const y = canvas.height - height;
           
@@ -46,13 +46,26 @@ export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
           ctx.fillRect(x, y, barWidth - 2, height);
         }
       } else {
-        // Draw flat line when inactive
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2);
-        ctx.lineTo(canvas.width, canvas.height / 2);
-        ctx.strokeStyle = '#4CAF50';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Gentle idle animation or agent speaking visualization
+        const time = Date.now() / 1000;
+        const bars = 50;
+        const barWidth = canvas.width / bars;
+
+        for (let i = 0; i < bars; i++) {
+          const x = i * barWidth;
+          let height;
+
+          if (isAgentSpeaking) {
+            // More active visualization for agent speech
+            height = Math.sin(time * 3 + i * 0.2) * 20 + 25;
+          } else {
+            // Gentle idle animation
+            height = Math.sin(time + i * 0.1) * 5 + 10;
+          }
+
+          ctx.fillStyle = '#4CAF50';
+          ctx.fillRect(x, canvas.height / 2 - height / 2, barWidth - 2, height);
+        }
       }
 
       animationRef.current = requestAnimationFrame(draw);

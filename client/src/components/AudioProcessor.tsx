@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 
 interface AudioProcessorProps {
   isActive: boolean;
+  isSpeaking?: boolean;
   onVoiceActivityChange?: (isActive: boolean) => void;
   onAudioData?: (data: Float32Array) => void;
 }
 
-export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }: AudioProcessorProps) {
+export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, onAudioData }: AudioProcessorProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -32,7 +33,7 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
   };
 
   useEffect(() => {
-    if (isActive && !isProcessing) {
+    if (!isProcessing) {
       const initializeAudio = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -64,8 +65,8 @@ export function AudioProcessor({ isActive, onVoiceActivityChange, onAudioData }:
               dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
             );
 
-            // Lower threshold for better sensitivity
-            const isVoiceActive = rms > 0.005;
+            // Lowered threshold for better sensitivity
+            const isVoiceActive = rms > 0.002;
             
             console.log('Audio state:', {
               contextState: audioContextRef.current?.state,

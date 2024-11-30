@@ -113,9 +113,11 @@ export function VoiceChat() {
             console.log('Voice activity changed:', active);
             setIsUserSpeaking(active);
           }}
+          isSpeaking={conversation.isSpeaking}
           onAudioData={(data) => {
             console.log('Audio data updated:', { 
               length: data.length,
+              maxAmplitude: Math.max(...Array.from(data.map(Math.abs))),
               timestamp: new Date().toISOString()
             });
             setAudioData(data);
@@ -123,8 +125,8 @@ export function VoiceChat() {
         />
         </ErrorBoundary>
         <AudioVisualizer 
-          isActive={conversation.status === 'connected'}
           audioData={audioData}
+          isAgentSpeaking={conversation.isSpeaking}
         />
       </div>
 
