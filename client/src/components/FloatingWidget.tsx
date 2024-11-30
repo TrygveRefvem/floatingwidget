@@ -18,7 +18,7 @@ export function FloatingWidget() {
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <img 
-                src="https://instabank.no/logo.svg" 
+                src="/Skjermbilde 2024-11-30 kl. 20.12.52.png" 
                 alt="Instabank" 
                 className="h-6"
               />
@@ -32,9 +32,6 @@ export function FloatingWidget() {
               </Button>
             </div>
             <VoiceChat />
-            <div className="text-center text-xs text-gray-400 mt-4">
-              Powered by ElevenLabs Conversational AI
-            </div>
           </div>
         </div>
       ) : (
@@ -44,10 +41,14 @@ export function FloatingWidget() {
             "h-16 w-16 rounded-full shadow-lg",
             "bg-[#4CAF50] hover:bg-[#45a049]",
             "transform transition-all duration-300 ease-in-out",
-            "flex items-center justify-center"
+            "flex items-center justify-center p-0"
           )}
         >
-          <div className="text-2xl font-bold">iB</div>
+          <img 
+            src="/Skjermbilde 2024-11-30 kl. 20.06.47.png" 
+            alt="iB"
+            className="h-12 w-12" 
+          />
         </Button>
       )}
     </div>

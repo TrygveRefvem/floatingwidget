@@ -24,10 +24,10 @@ export function VoiceChat() {
         variant: "destructive",
       });
     },
-    onError: (error: Error) => {
+    onError: (message: string) => {
       toast({
         title: "Feil",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       setIsInitializing(false);
