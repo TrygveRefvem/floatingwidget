@@ -18,7 +18,7 @@ export function FloatingWidget() {
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
               <img 
-                src="/Skjermbilde 2024-11-30 kl. 20.12.52.png" 
+                src="/logobank.png" 
                 alt="Instabank" 
                 className="h-6"
               />
@@ -45,7 +45,7 @@ export function FloatingWidget() {
           )}
         >
           <img 
-            src="/Skjermbilde 2024-11-30 kl. 20.06.47.png" 
+            src="/smalllogo.png" 
             alt="iB"
             className="h-12 w-12" 
           />
