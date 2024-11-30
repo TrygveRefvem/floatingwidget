@@ -3,7 +3,6 @@ import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
-import { AudioVisualizer } from './AudioVisualizer';
 import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -11,7 +10,6 @@ export function VoiceChat() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
   const [agentId, setAgentId] = useState<string | null>(null);
-  const [audioData, setAudioData] = useState<Float32Array>();
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
 
   useEffect(() => {
@@ -114,20 +112,8 @@ export function VoiceChat() {
             setIsUserSpeaking(active);
           }}
           isSpeaking={conversation.isSpeaking}
-          onAudioData={(data) => {
-            console.log('Audio data updated:', { 
-              length: data.length,
-              maxAmplitude: Math.max(...Array.from(data.map(Math.abs))),
-              timestamp: new Date().toISOString()
-            });
-            setAudioData(data);
-          }}
         />
         </ErrorBoundary>
-        <AudioVisualizer 
-          audioData={audioData}
-          isAgentSpeaking={conversation.isSpeaking}
-        />
       </div>
 
       <div className="w-full flex justify-center">

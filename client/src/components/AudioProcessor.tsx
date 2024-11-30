@@ -4,7 +4,6 @@ interface AudioProcessorProps {
   isActive: boolean;
   isSpeaking?: boolean;
   onVoiceActivityChange?: (isActive: boolean) => void;
-  onAudioData?: (data: Float32Array) => void;
 }
 
 export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, onAudioData }: AudioProcessorProps) {
@@ -63,7 +62,6 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange, on
           }
 
           analyser.getFloatTimeDomainData(dataArray);
-          onAudioData?.(dataArray);
           
           // Calculate RMS with increased sensitivity
           const rms = Math.sqrt(
