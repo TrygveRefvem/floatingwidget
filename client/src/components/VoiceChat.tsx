@@ -39,18 +39,10 @@ export function VoiceChat() {
 
   const conversation = useConversation({
     onConnect: () => {
-      toast({
-        title: "Tilkoblet",
-        description: "Du kan nå snakke med assistenten",
-      });
       setIsInitializing(false);
     },
     onDisconnect: () => {
-      toast({
-        title: "Frakoblet",
-        description: "Samtalen er avsluttet",
-        variant: "destructive",
-      });
+      // Connection status is shown in the UI
     },
     onError: (message: string) => {
       toast({
