@@ -38,16 +38,16 @@ export function FloatingWidget() {
         <Button
           onClick={() => setIsExpanded(true)}
           className={cn(
-            "h-16 w-16 rounded-full shadow-lg",
+            "h-16 w-16 rounded-full shadow-lg overflow-hidden",
             "bg-[#4CAF50] hover:bg-[#45a049]",
             "transform transition-all duration-300 ease-in-out",
-            "flex items-center justify-center p-0"
+            "flex items-center justify-center"
           )}
         >
           <img 
             src="/smalllogo.png" 
             alt="iB"
-            className="h-8 w-8 brightness-0 invert" 
+            className="h-8 w-8 object-contain filter invert" 
           />
         </Button>
       )}
