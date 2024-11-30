@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 
 interface AudioVisualizerProps {
   isActive: boolean;
+  audioData?: Float32Array;
 }
 
-export function AudioVisualizer({ isActive }: AudioVisualizerProps) {
+export function AudioVisualizer({ isActive, audioData }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
 
@@ -15,15 +16,24 @@ export function AudioVisualizer({ isActive }: AudioVisualizerProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bars = 50;
-    const barWidth = canvas.width / bars;
-
-    const animate = () => {
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (isActive) {
+      if (isActive && audioData) {
+        const bars = 50;
+        const step = Math.floor(audioData.length / bars);
+        const barWidth = canvas.width / bars;
+
         for (let i = 0; i < bars; i++) {
-          const height = Math.random() * canvas.height * 0.7;
+          // Get average value for this bar
+          let sum = 0;
+          for (let j = 0; j < step; j++) {
+            sum += Math.abs(audioData[i * step + j] || 0);
+          }
+          const average = sum / step;
+          
+          // Scale the height (adjust multiplier as needed)
+          const height = average * canvas.height * 5;
           const x = i * barWidth;
           const y = canvas.height - height;
           
@@ -40,17 +50,17 @@ export function AudioVisualizer({ isActive }: AudioVisualizerProps) {
         ctx.stroke();
       }
 
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(draw);
     };
 
-    animate();
+    draw();
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isActive]);
+  }, [isActive, audioData]);
 
   return (
     <canvas

@@ -2,13 +2,16 @@ import { useCallback, useState, useEffect } from 'react';
 import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Phone, PhoneOff, Loader2 } from 'lucide-react';
+import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
+import { AudioProcessor } from './AudioProcessor';
 
 export function VoiceChat() {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(false);
   const [agentId, setAgentId] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<Float32Array>();
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
 
   useEffect(() => {
     // Check browser compatibility
@@ -102,8 +105,14 @@ export function VoiceChat() {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="w-full">
+        <AudioProcessor 
+          isActive={conversation.status === 'connected'}
+          onVoiceActivityChange={setIsUserSpeaking}
+          onAudioData={setAudioData}
+        />
         <AudioVisualizer 
-          isActive={conversation.status === 'connected'} 
+          isActive={conversation.status === 'connected'}
+          audioData={audioData}
         />
       </div>
 
@@ -139,9 +148,16 @@ export function VoiceChat() {
 
       <div className="text-sm text-gray-500 text-center">
         {conversation.status === 'connected' ? (
-          conversation.isSpeaking ? 
-            'Assistenten snakker...' : 
+          conversation.isSpeaking ? (
+            'Assistenten snakker...'
+          ) : isUserSpeaking ? (
+            <span className="flex items-center justify-center gap-2">
+              <Mic className="w-4 h-4 text-green-500 animate-pulse" />
+              Du snakker...
+            </span>
+          ) : (
             'Assistenten lytter...'
+          )
         ) : (
           'Klar til å starte samtale'
         )}
