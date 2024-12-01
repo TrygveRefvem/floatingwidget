@@ -19,7 +19,7 @@ export function VoiceChat() {
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [conversationContext, setConversationContext] = useState<string[]>([]);
-  const [streamingText, setStreamingText] = useState('');
+  
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Add scroll into view effect
@@ -75,30 +75,29 @@ export function VoiceChat() {
         return;
       }
       
-      // Add typing indicator for assistant responses
-      if (data.source === 'assistant') {
-        // Update transcript immediately with actual message
-        setTranscript(prev => [
-          ...prev.filter(msg => msg.text !== '...'),
+      setTranscript(prev => {
+        const filteredMessages = prev.filter(msg => msg.text !== '...');
+        return [
+          ...filteredMessages,
           {
-            speaker: 'Assistant',
-            text: data.message
+            speaker: data.source === 'assistant' ? 'Assistant' : 'You',
+            text: data.message,
+            timestamp: Date.now()
           }
-        ]);
-      } else if (data.source === 'user') {
-        setTranscript(prev => [
-          ...prev.filter(msg => msg.text !== '...'),
-          {
-            speaker: 'You',
-            text: data.message
-          }
-        ]);
-      }
+        ];
+      });
 
-      // Keep conversation context up to date
+      // Update conversation context
       setConversationContext(prev => {
-        const messages = [...transcript, { speaker: data.source === 'assistant' ? 'Assistant' : 'You', text: data.message }];
-        return messages.slice(-10).map(msg => `${msg.speaker}: ${msg.text}`);
+        const updatedTranscript = [
+          ...transcript,
+          { 
+            speaker: data.source === 'assistant' ? 'Assistant' : 'You',
+            text: data.message
+          }
+        ].slice(-10);
+        
+        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
       });
     },
     onError: (message: string) => {
@@ -176,12 +175,7 @@ export function VoiceChat() {
             {message.text}
           </div>
         ))}
-        {streamingText && (
-          <div className="mb-2">
-            <span className="font-medium">Assistant: </span>
-            {streamingText}
-          </div>
-        )}
+        
       </div>
 
       <div className="w-full">
