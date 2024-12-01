@@ -80,7 +80,7 @@ export function VoiceChat() {
       return [
         ...filteredMessages,
         {
-          speaker: data.source === 'assistant' ? 'InstaAI' : 'You',
+          speaker: data.source === 'user' ? 'You' : 'InstaAI',
           text: data.message,
           timestamp: Date.now()
         }
