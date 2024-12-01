@@ -69,58 +69,38 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-    // Prevent duplicate welcome messages
-    if (data.message.toLowerCase().includes('welcome to instabank') && 
-        data.source === 'user') {
-      return;
-    }
-    
-    if (data.source === 'assistant') {
-      // First, update the transcript
-      setTranscript(prev => [
-        ...prev.filter(msg => msg.text !== '...'),
-        {
-          speaker: 'Assistant',
-          text: data.message,
-          timestamp: Date.now()
-        }
-      ]);
+      // Prevent duplicate welcome messages
+      if (data.message.toLowerCase().includes('welcome to instabank') && 
+          data.source === 'user') {
+        return;
+      }
       
-      // Then handle streaming animation separately
-      let currentText = '';
-      const words = data.message.split(' ');
-      let wordIndex = 0;
+      // Add typing indicator for assistant responses
+      if (data.source === 'assistant') {
+        // Update transcript immediately with actual message
+        setTranscript(prev => [
+          ...prev.filter(msg => msg.text !== '...'),
+          {
+            speaker: 'Assistant',
+            text: data.message
+          }
+        ]);
+      } else if (data.source === 'user') {
+        setTranscript(prev => [
+          ...prev.filter(msg => msg.text !== '...'),
+          {
+            speaker: 'You',
+            text: data.message
+          }
+        ]);
+      }
 
-      const streamInterval = setInterval(() => {
-        if (wordIndex < words.length) {
-          currentText += words[wordIndex] + ' ';
-          setStreamingText(currentText);
-          wordIndex++;
-        } else {
-          clearInterval(streamInterval);
-          setStreamingText('');
-        }
-      }, 100);
-    } else if (data.source === 'user') {
-      setTranscript(prev => [
-        ...prev.filter(msg => msg.text !== '...'),
-        {
-          speaker: 'You',
-          text: data.message,
-          timestamp: Date.now()
-        }
-      ]);
-    }
-
-    // Update context with the latest messages
-    const updatedTranscript = data.source === 'assistant' 
-      ? [...transcript, { speaker: 'Assistant', text: data.message }]
-      : [...transcript, { speaker: 'You', text: data.message }];
-      
-    setConversationContext(
-      updatedTranscript.slice(-10).map(msg => `${msg.speaker}: ${msg.text}`)
-    );
-  },
+      // Keep conversation context up to date
+      setConversationContext(prev => {
+        const messages = [...transcript, { speaker: data.source === 'assistant' ? 'Assistant' : 'You', text: data.message }];
+        return messages.slice(-10).map(msg => `${msg.speaker}: ${msg.text}`);
+      });
+    },
     onError: (message: string) => {
       toast({
         title: "Feil",
