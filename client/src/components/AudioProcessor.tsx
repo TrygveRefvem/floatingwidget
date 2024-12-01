@@ -6,11 +6,11 @@ interface AudioProcessorProps {
   onVoiceActivityChange?: (isActive: boolean) => void;
 }
 
-// Increased constants for more stringent voice detection
-const MIN_VOICE_DURATION = 300; // ms
-const VOICE_THRESHOLD = 0.05;
-const NOISE_FLOOR = 0.02;
-const DEBOUNCE_TIME = 500; // ms
+// Optimized constants for better interruption handling
+const MIN_VOICE_DURATION = 200; // ms
+const VOICE_THRESHOLD = 0.03; // More sensitive
+const NOISE_FLOOR = 0.015; // Lower noise floor
+const DEBOUNCE_TIME = 300; // ms
 
 export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: AudioProcessorProps) {
   const audioContextRef = useRef<AudioContext | null>(null);

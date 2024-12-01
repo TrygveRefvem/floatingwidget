@@ -91,15 +91,17 @@ export function VoiceChat() {
             setStreamingText('');
             setTranscript(prev => {
               const filtered = prev.filter(msg => msg.text !== '...');
-              const updated = [...filtered, {
-                speaker: 'Assistant',
+              return [...filtered, {
+                speaker: 'Assistant' as const,
                 text: data.message,
                 timestamp: Date.now()
               }];
-              // Update conversation context with the last 10 messages
-              const recentMessages = updated.slice(-10);
+            });
+            // Update conversation context separately to avoid type issues
+            setTranscript(prev => {
+              const recentMessages = prev.slice(-10);
               setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-              return updated;
+              return prev;
             });
           }
         }, 100);
@@ -107,15 +109,17 @@ export function VoiceChat() {
         // Only add user messages that aren't translations
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
-          const updated = [...filtered, {
-            speaker: 'You',
+          return [...filtered, {
+            speaker: 'You' as const,
             text: data.message,
             timestamp: Date.now()
           }];
-          // Update conversation context with the last 10 messages
-          const recentMessages = updated.slice(-10);
+        });
+        // Update conversation context separately to avoid type issues
+        setTranscript(prev => {
+          const recentMessages = prev.slice(-10);
           setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-          return updated;
+          return prev;
         });
       }
     },
