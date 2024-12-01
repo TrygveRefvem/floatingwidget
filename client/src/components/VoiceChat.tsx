@@ -75,6 +75,7 @@ export function VoiceChat() {
         return;
       }
       
+      // Add new message to transcript with correct speaker attribution
       setTranscript(prev => {
         const filteredMessages = prev.filter(msg => msg.text !== '...');
         return [
@@ -87,7 +88,7 @@ export function VoiceChat() {
         ];
       });
 
-      // Update conversation context
+      // Update conversation context with correct attribution
       setConversationContext(prev => {
         const updatedTranscript = [
           ...transcript,
