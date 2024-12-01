@@ -9,6 +9,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 interface TranscriptMessage {
   speaker: 'You' | 'Assistant';
   text: string;
+  timestamp?: number;
 }
 
 export function VoiceChat() {
@@ -17,6 +18,7 @@ export function VoiceChat() {
   const [agentId, setAgentId] = useState<string | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
+  const [conversationContext, setConversationContext] = useState<string[]>([]);
   const [streamingText, setStreamingText] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -81,12 +83,18 @@ export function VoiceChat() {
           } else {
             clearInterval(streamInterval);
             setStreamingText('');
+            const newMessage = {
+              speaker: 'Assistant' as const,
+              text: data.message,
+              timestamp: Date.now()
+            };
             setTranscript(prev => {
               const filtered = prev.filter(msg => msg.text !== '...');
-              return [...filtered, {
-                speaker: 'Assistant',
-                text: data.message
-              }];
+              const updated = [...filtered, newMessage];
+              // Update conversation context with the last 10 messages
+              const recentMessages = updated.slice(-10);
+              setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
+              return updated;
             });
           }
         }, 100);
@@ -94,10 +102,16 @@ export function VoiceChat() {
         // Handle user messages normally
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
-          return [...filtered, {
-            speaker: 'You',
-            text: data.message
-          }];
+          const newMessage = {
+            speaker: 'You' as const,
+            text: data.message,
+            timestamp: Date.now()
+          };
+          const updated = [...filtered, newMessage];
+          // Update conversation context with the last 10 messages
+          const recentMessages = updated.slice(-10);
+          setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
+          return updated;
         });
       }
     },
@@ -142,6 +156,13 @@ export function VoiceChat() {
       // Start conversation session
       await conversation.startSession({
         agentId: agentId,
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: conversationContext.join('\n')
+            }
+          }
+        }
       });
     } catch (error) {
       toast({
