@@ -75,29 +75,37 @@ export function VoiceChat() {
         return;
       }
       
-      // Add new message to transcript with correct speaker attribution
-      setTranscript(prev => {
-        const filteredMessages = prev.filter(msg => msg.text !== '...');
-        return [
-          ...filteredMessages,
-          {
-            speaker: data.source === 'assistant' ? 'Assistant' : 'You',
-            text: data.message,
-            timestamp: Date.now()
-          }
-        ];
-      });
+      if (data.source === 'assistant') {
+        // Add assistant message to transcript
+        setTranscript(prev => {
+          const filteredMessages = prev.filter(msg => msg.text !== '...');
+          return [
+            ...filteredMessages,
+            {
+              speaker: 'Assistant',
+              text: data.message,
+              timestamp: Date.now()
+            }
+          ];
+        });
+      } else {
+        // Add user message to transcript
+        setTranscript(prev => {
+          const filteredMessages = prev.filter(msg => msg.text !== '...');
+          return [
+            ...filteredMessages,
+            {
+              speaker: 'You',
+              text: data.message,
+              timestamp: Date.now()
+            }
+          ];
+        });
+      }
 
-      // Update conversation context with correct attribution
+      // Update conversation context
       setConversationContext(prev => {
-        const updatedTranscript = [
-          ...transcript,
-          { 
-            speaker: data.source === 'assistant' ? 'Assistant' : 'You',
-            text: data.message
-          }
-        ].slice(-10);
-        
+        const updatedTranscript = transcript.slice(-10);
         return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
       });
     },
@@ -189,10 +197,13 @@ export function VoiceChat() {
               if (active) {
                 // Only add placeholder if not already present
                 if (!transcript.some(msg => msg.text === '...')) {
-                  setTranscript(prev => [...prev.filter(msg => msg.text !== '...'), {
-                    speaker: 'You',
-                    text: '...'
-                  }]);
+                  setTranscript(prev => [
+                    ...prev.filter(msg => msg.text !== '...'),
+                    {
+                      speaker: 'You',
+                      text: '...'
+                    }
+                  ]);
                 }
               }
             }}
