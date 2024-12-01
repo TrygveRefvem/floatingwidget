@@ -69,14 +69,14 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      // Prevent duplicate welcome messages by checking content
+      // Prevent duplicate welcome messages
       if (data.message.toLowerCase().includes('welcome to instabank') && 
           data.source === 'user') {
-        return; // Skip automated translations
+        return;
       }
       
       if (data.source === 'assistant') {
-        // Stream assistant messages
+        // Stream the text
         let currentText = '';
         const words = data.message.split(' ');
         let wordIndex = 0;
@@ -89,37 +89,38 @@ export function VoiceChat() {
           } else {
             clearInterval(streamInterval);
             setStreamingText('');
+            
+            // Update transcript with completed message
             setTranscript(prev => {
               const filtered = prev.filter(msg => msg.text !== '...');
-              return [...filtered, {
-                speaker: 'Assistant' as const,
+              const newTranscript = [...filtered, {
+                speaker: 'Assistant',
                 text: data.message,
                 timestamp: Date.now()
               }];
-            });
-            // Update conversation context separately to avoid type issues
-            setTranscript(prev => {
-              const recentMessages = prev.slice(-10);
+              
+              // Update context after transcript is updated
+              const recentMessages = newTranscript.slice(-10);
               setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-              return prev;
+              
+              return newTranscript;
             });
           }
         }, 100);
       } else if (data.source === 'user') {
-        // Only add user messages that aren't translations
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
-          return [...filtered, {
-            speaker: 'You' as const,
+          const newTranscript = [...filtered, {
+            speaker: 'You',
             text: data.message,
             timestamp: Date.now()
           }];
-        });
-        // Update conversation context separately to avoid type issues
-        setTranscript(prev => {
-          const recentMessages = prev.slice(-10);
+          
+          // Update context after transcript is updated
+          const recentMessages = newTranscript.slice(-10);
           setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-          return prev;
+          
+          return newTranscript;
         });
       }
     },
