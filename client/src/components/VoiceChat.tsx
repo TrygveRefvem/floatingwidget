@@ -58,8 +58,18 @@ export function VoiceChat() {
     },
     onMessage: (data: { message: string; source: string }) => {
       setTranscript(prev => {
-        // Remove any "..." placeholder messages
-        const filtered = prev.filter(msg => msg.text !== '...');
+        // Remove any "..." placeholder messages and partial user messages
+        const filtered = prev.filter(msg => {
+          // Keep complete messages that aren't duplicates
+          if (msg.text === '...' || 
+              (data.source === 'assistant' && msg.speaker === 'Assistant' && msg.text.startsWith(data.message.slice(0, 20))) ||
+              (data.source === 'user' && msg.speaker === 'You' && msg.text === '...')) {
+            return false;
+          }
+          return true;
+        });
+        
+        // Add the new message
         return [...filtered, {
           speaker: data.source === 'user' ? 'You' : 'Assistant',
           text: data.message
@@ -141,9 +151,9 @@ export function VoiceChat() {
               console.log('Voice activity changed:', active);
               setIsUserSpeaking(active);
               if (active) {
-                // Only add user message placeholder when starting to speak
-                if (!transcript.some(msg => msg.speaker === 'You' && msg.text === '...')) {
-                  setTranscript(prev => [...prev, {
+                // Only add placeholder if not already present
+                if (!transcript.some(msg => msg.text === '...')) {
+                  setTranscript(prev => [...prev.filter(msg => msg.text !== '...'), {
                     speaker: 'You',
                     text: '...'
                   }]);
