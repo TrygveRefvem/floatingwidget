@@ -69,46 +69,30 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      // Prevent duplicate welcome messages
-      if (data.message.toLowerCase().includes('welcome to instabank') && 
-          data.source === 'user') {
-        return;
-      }
-      
-      if (data.source === 'assistant') {
-        // Add assistant message to transcript
-        setTranscript(prev => {
-          const filteredMessages = prev.filter(msg => msg.text !== '...');
-          return [
-            ...filteredMessages,
-            {
-              speaker: 'InstaAI',  // Changed from 'Assistant' to 'InstaAI'
-              text: data.message,
-              timestamp: Date.now()
-            }
-          ];
-        });
-      } else {
-        // Add user message to transcript
-        setTranscript(prev => {
-          const filteredMessages = prev.filter(msg => msg.text !== '...');
-          return [
-            ...filteredMessages,
-            {
-              speaker: 'You',
-              text: data.message,
-              timestamp: Date.now()
-            }
-          ];
-        });
-      }
+    // Prevent duplicate welcome messages
+    if (data.message.toLowerCase().includes('welcome to instabank') && 
+        data.source === 'user') {
+      return;
+    }
+    
+    setTranscript(prev => {
+      const filteredMessages = prev.filter(msg => msg.text !== '...');
+      return [
+        ...filteredMessages,
+        {
+          speaker: data.source === 'assistant' ? 'InstaAI' : 'You',
+          text: data.message,
+          timestamp: Date.now()
+        }
+      ];
+    });
 
-      // Update conversation context
-      setConversationContext(prev => {
-        const updatedTranscript = transcript.slice(-10);
-        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
-      });
-    },
+    // Update conversation context
+    setConversationContext(prev => {
+      const updatedTranscript = transcript.slice(-10);
+      return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
+    });
+  },
     onError: (message: string) => {
       toast({
         title: "Feil",
