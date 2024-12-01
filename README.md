@@ -8,7 +8,7 @@ A voice conversation widget using ElevenLabs AI that can be embedded in any webs
 
 ```html
 <!-- Add to your HTML head -->
-<script src="https://your-replit-url.repl.co/widget.js"></script>
+<script src="https://InstaVoiceWidget.repl.co/widget.js"></script>
 
 <!-- Add to your HTML body -->
 <div id="instabank-voice-widget"></div>
@@ -104,5 +104,14 @@ Common issues and solutions:
    - Verify browser compatibility
 
 ## Support
+
+## Version History
+
+### v1.2.0
+- Improved voice activity detection with refined thresholds
+- Added streaming text display for better conversation flow
+- Fixed duplicate welcome messages
+- Enhanced transcript display with proper formatting
+- Added conversation context preservation (up to 10 messages)
 
 For issues and feature requests, please contact Instabank support.
