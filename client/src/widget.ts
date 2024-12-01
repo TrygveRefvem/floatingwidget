@@ -25,7 +25,7 @@ class VoiceWidget {
     return VoiceWidget.instance;
   }
 
-  init(options: WidgetOptions = {}) {
+  async init(options: WidgetOptions = {}) {
     try {
       const containerId = options.containerId || 'instabank-voice-widget';
       const container = document.getElementById(containerId);
@@ -36,6 +36,18 @@ class VoiceWidget {
 
       if (this.root) {
         throw new Error('Widget is already initialized');
+      }
+
+      // Verify API configuration
+      try {
+        const response = await fetch('/api/elevenlabs/config');
+        const data = await response.json();
+        
+        if (data.error || !data.agentId) {
+          throw new Error('Missing or invalid ElevenLabs configuration. Please check your environment variables.');
+        }
+      } catch (apiError) {
+        throw new Error('Failed to verify API configuration. Please ensure ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID are properly set.');
       }
 
       this.container = container;
@@ -55,6 +67,7 @@ class VoiceWidget {
       const err = error instanceof Error ? error : new Error('Failed to initialize widget');
       options.onError?.(err);
       console.error('Widget initialization error:', err);
+      throw err; // Re-throw to allow handling by the application
     }
   }
 
