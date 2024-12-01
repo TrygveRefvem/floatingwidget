@@ -27,8 +27,8 @@ export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerP
         for (let i = 0; i < bars; i++) {
           // Get average value for this bar
           let sum = 0;
-          for (let j = 0; j < step; j++) {
-            sum += Math.abs(audioData[i * step + j] || 0);
+          for (let j = 0; j < step && (i * step + j) < audioData.length; j++) {
+            sum += Math.abs(audioData[i * step + j]);
           }
           const average = sum / step;
           
