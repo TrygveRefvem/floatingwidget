@@ -69,8 +69,14 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
+      // Prevent duplicate welcome messages by checking content
+      if (data.message.toLowerCase().includes('welcome to instabank') && 
+          data.source === 'user') {
+        return; // Skip automated translations
+      }
+      
       if (data.source === 'assistant') {
-        // Stream the text
+        // Stream assistant messages
         let currentText = '';
         const words = data.message.split(' ');
         let wordIndex = 0;
@@ -83,14 +89,13 @@ export function VoiceChat() {
           } else {
             clearInterval(streamInterval);
             setStreamingText('');
-            const newMessage = {
-              speaker: 'Assistant' as const,
-              text: data.message,
-              timestamp: Date.now()
-            };
             setTranscript(prev => {
               const filtered = prev.filter(msg => msg.text !== '...');
-              const updated = [...filtered, newMessage];
+              const updated = [...filtered, {
+                speaker: 'Assistant',
+                text: data.message,
+                timestamp: Date.now()
+              }];
               // Update conversation context with the last 10 messages
               const recentMessages = updated.slice(-10);
               setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
@@ -98,16 +103,15 @@ export function VoiceChat() {
             });
           }
         }, 100);
-      } else {
-        // Handle user messages normally
+      } else if (data.source === 'user') {
+        // Only add user messages that aren't translations
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
-          const newMessage = {
-            speaker: 'You' as const,
+          const updated = [...filtered, {
+            speaker: 'You',
             text: data.message,
             timestamp: Date.now()
-          };
-          const updated = [...filtered, newMessage];
+          }];
           // Update conversation context with the last 10 messages
           const recentMessages = updated.slice(-10);
           setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
