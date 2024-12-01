@@ -17,6 +17,15 @@ export function VoiceChat() {
   const [agentId, setAgentId] = useState<string | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
+  const [streamingText, setStreamingText] = useState('');
+  const transcriptRef = useRef<HTMLDivElement>(null);
+
+  // Add scroll into view effect
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [transcript]);
 
   useEffect(() => {
     // Check browser compatibility
@@ -48,7 +57,8 @@ export function VoiceChat() {
   const conversation = useConversation({
     onConnect: () => {
       setIsInitializing(false);
-      setTranscript(prev => [...prev, {
+      // Only show Norwegian welcome message
+      setTranscript([{
         speaker: 'Assistant',
         text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
       }]);
@@ -57,24 +67,39 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      setTranscript(prev => {
-        // Remove any "..." placeholder messages and partial user messages
-        const filtered = prev.filter(msg => {
-          // Keep complete messages that aren't duplicates
-          if (msg.text === '...' || 
-              (data.source === 'assistant' && msg.speaker === 'Assistant' && msg.text.startsWith(data.message.slice(0, 20))) ||
-              (data.source === 'user' && msg.speaker === 'You' && msg.text === '...')) {
-            return false;
+      if (data.source === 'assistant') {
+        // Stream the text
+        let currentText = '';
+        const words = data.message.split(' ');
+        let wordIndex = 0;
+
+        const streamInterval = setInterval(() => {
+          if (wordIndex < words.length) {
+            currentText += words[wordIndex] + ' ';
+            setStreamingText(currentText);
+            wordIndex++;
+          } else {
+            clearInterval(streamInterval);
+            setStreamingText('');
+            setTranscript(prev => {
+              const filtered = prev.filter(msg => msg.text !== '...');
+              return [...filtered, {
+                speaker: 'Assistant',
+                text: data.message
+              }];
+            });
           }
-          return true;
+        }, 100);
+      } else {
+        // Handle user messages normally
+        setTranscript(prev => {
+          const filtered = prev.filter(msg => msg.text !== '...');
+          return [...filtered, {
+            speaker: 'You',
+            text: data.message
+          }];
         });
-        
-        // Add the new message
-        return [...filtered, {
-          speaker: data.source === 'user' ? 'You' : 'Assistant',
-          text: data.message
-        }];
-      });
+      }
     },
     onError: (message: string) => {
       toast({
@@ -134,13 +159,22 @@ export function VoiceChat() {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="w-full h-[200px] bg-gray-50 rounded-md p-3 overflow-y-auto">
+      <div 
+        ref={transcriptRef}
+        className="w-full h-[200px] bg-gray-50 rounded-md p-3 overflow-y-auto"
+      >
         {transcript.map((message, index) => (
           <div key={index} className="mb-2">
             <span className="font-medium">{message.speaker}: </span>
             {message.text}
           </div>
         ))}
+        {streamingText && (
+          <div className="mb-2">
+            <span className="font-medium">Assistant: </span>
+            {streamingText}
+          </div>
+        )}
       </div>
 
       <div className="w-full">
