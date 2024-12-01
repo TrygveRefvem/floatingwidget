@@ -57,10 +57,14 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      setTranscript(prev => [...prev, {
-        speaker: 'Assistant',
-        text: data.message
-      }]);
+      setTranscript(prev => {
+        // Remove any "..." placeholder messages
+        const filtered = prev.filter(msg => msg.text !== '...');
+        return [...filtered, {
+          speaker: data.source === 'user' ? 'You' : 'Assistant',
+          text: data.message
+        }];
+      });
     },
     onError: (message: string) => {
       toast({
@@ -137,10 +141,13 @@ export function VoiceChat() {
               console.log('Voice activity changed:', active);
               setIsUserSpeaking(active);
               if (active) {
-                setTranscript(prev => [...prev, {
-                  speaker: 'You',
-                  text: '...'
-                }]);
+                // Only add user message placeholder when starting to speak
+                if (!transcript.some(msg => msg.speaker === 'You' && msg.text === '...')) {
+                  setTranscript(prev => [...prev, {
+                    speaker: 'You',
+                    text: '...'
+                  }]);
+                }
               }
             }}
             isSpeaking={conversation.isSpeaking}
