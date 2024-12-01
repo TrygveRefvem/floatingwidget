@@ -7,7 +7,7 @@ import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface TranscriptMessage {
-  speaker: 'You' | 'Assistant';
+  speaker: 'You' | 'InstaAI';  // Changed from 'Assistant' to 'InstaAI'
   text: string;
   timestamp?: number;
 }
@@ -61,7 +61,7 @@ export function VoiceChat() {
       setIsInitializing(false);
       // Only show Norwegian welcome message
       setTranscript([{
-        speaker: 'Assistant',
+        speaker: 'InstaAI',  // Changed from 'Assistant' to 'InstaAI'
         text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
       }]);
     },
@@ -82,7 +82,7 @@ export function VoiceChat() {
           return [
             ...filteredMessages,
             {
-              speaker: 'Assistant',
+              speaker: 'InstaAI',  // Changed from 'Assistant' to 'InstaAI'
               text: data.message,
               timestamp: Date.now()
             }
