@@ -19,7 +19,7 @@ export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerP
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (audioData?.length > 0) {
+      if (audioData && audioData.length > 0) {
         const bars = 50;
         const step = Math.floor(audioData.length / bars);
         const barWidth = canvas.width / bars;
@@ -27,12 +27,14 @@ export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerP
         for (let i = 0; i < bars; i++) {
           // Get average value for this bar
           let sum = 0;
-          for (let j = 0; j < step && (i * step + j) < audioData.length; j++) {
-            sum += Math.abs(audioData[i * step + j]);
-          }
-          const average = sum / step;
+          const startIndex = i * step;
           
-          // Enhanced scaling for better visualization
+          // Ensure we don't access beyond array bounds
+          for (let j = 0; j < step && (startIndex + j) < audioData.length; j++) {
+            sum += Math.abs(audioData[startIndex + j]);
+          }
+          
+          const average = sum / step;
           const height = average * canvas.height * 15;
           const x = i * barWidth;
           const y = canvas.height - height;
@@ -55,7 +57,7 @@ export function AudioVisualizer({ audioData, isAgentSpeaking }: AudioVisualizerP
             height = Math.sin(time * 3 + i * 0.2) * 10 + 15;
           } else {
             // Gentle idle animation
-            height = Math.sin(time + i * 0.1) * 10 + 15;
+            height = Math.sin(time + i * 0.1) * 5 + 10;
           }
           
           ctx.fillStyle = '#4CAF50';
