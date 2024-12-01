@@ -76,7 +76,17 @@ export function VoiceChat() {
       }
       
       if (data.source === 'assistant') {
-        // Stream the text
+        // Update transcript immediately
+        setTranscript(prev => {
+          const filtered = prev.filter(msg => msg.text !== '...');
+          return [...filtered, {
+            speaker: 'Assistant',
+            text: data.message,
+            timestamp: Date.now()
+          }];
+        });
+        
+        // Stream the text separately for visual feedback
         let currentText = '';
         const words = data.message.split(' ');
         let wordIndex = 0;
@@ -89,42 +99,24 @@ export function VoiceChat() {
           } else {
             clearInterval(streamInterval);
             setStreamingText('');
-            
-            // Update transcript with completed message
-            setTranscript(prev => {
-              const filtered = prev.filter(msg => msg.text !== '...');
-              return [...filtered, {
-                speaker: 'Assistant' as const,
-                text: data.message,
-                timestamp: Date.now()
-              }];
-            });
-            
-            // Update conversation context
-            setTranscript(prev => {
-              const recentMessages = prev.slice(-10);
-              setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-              return prev;
-            });
           }
         }, 100);
       } else if (data.source === 'user') {
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
           return [...filtered, {
-            speaker: 'You' as const,
+            speaker: 'You',
             text: data.message,
             timestamp: Date.now()
           }];
         });
-        
-        // Update conversation context
-        setTranscript(prev => {
-          const recentMessages = prev.slice(-10);
-          setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-          return prev;
-        });
       }
+
+      // Update conversation context after any message
+      setConversationContext(prev => {
+        const recentMessages = transcript.slice(-10);
+        return recentMessages.map(msg => `${msg.speaker}: ${msg.text}`);
+      });
     },
     onError: (message: string) => {
       toast({
