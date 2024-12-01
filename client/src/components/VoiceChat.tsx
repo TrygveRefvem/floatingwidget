@@ -69,55 +69,58 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      // Prevent duplicate welcome messages
-      if (data.message.toLowerCase().includes('welcome to instabank') && 
-          data.source === 'user') {
-        return;
-      }
+    // Prevent duplicate welcome messages
+    if (data.message.toLowerCase().includes('welcome to instabank') && 
+        data.source === 'user') {
+      return;
+    }
+    
+    if (data.source === 'assistant') {
+      // First, update the transcript
+      setTranscript(prev => [
+        ...prev.filter(msg => msg.text !== '...'),
+        {
+          speaker: 'Assistant',
+          text: data.message,
+          timestamp: Date.now()
+        }
+      ]);
       
-      if (data.source === 'assistant') {
-        // Update transcript immediately
-        setTranscript(prev => {
-          const filtered = prev.filter(msg => msg.text !== '...');
-          return [...filtered, {
-            speaker: 'Assistant',
-            text: data.message,
-            timestamp: Date.now()
-          }];
-        });
-        
-        // Stream the text separately for visual feedback
-        let currentText = '';
-        const words = data.message.split(' ');
-        let wordIndex = 0;
+      // Then handle streaming animation separately
+      let currentText = '';
+      const words = data.message.split(' ');
+      let wordIndex = 0;
 
-        const streamInterval = setInterval(() => {
-          if (wordIndex < words.length) {
-            currentText += words[wordIndex] + ' ';
-            setStreamingText(currentText);
-            wordIndex++;
-          } else {
-            clearInterval(streamInterval);
-            setStreamingText('');
-          }
-        }, 100);
-      } else if (data.source === 'user') {
-        setTranscript(prev => {
-          const filtered = prev.filter(msg => msg.text !== '...');
-          return [...filtered, {
-            speaker: 'You',
-            text: data.message,
-            timestamp: Date.now()
-          }];
-        });
-      }
+      const streamInterval = setInterval(() => {
+        if (wordIndex < words.length) {
+          currentText += words[wordIndex] + ' ';
+          setStreamingText(currentText);
+          wordIndex++;
+        } else {
+          clearInterval(streamInterval);
+          setStreamingText('');
+        }
+      }, 100);
+    } else if (data.source === 'user') {
+      setTranscript(prev => [
+        ...prev.filter(msg => msg.text !== '...'),
+        {
+          speaker: 'You',
+          text: data.message,
+          timestamp: Date.now()
+        }
+      ]);
+    }
 
-      // Update conversation context after any message
-      setConversationContext(prev => {
-        const recentMessages = transcript.slice(-10);
-        return recentMessages.map(msg => `${msg.speaker}: ${msg.text}`);
-      });
-    },
+    // Update context with the latest messages
+    const updatedTranscript = data.source === 'assistant' 
+      ? [...transcript, { speaker: 'Assistant', text: data.message }]
+      : [...transcript, { speaker: 'You', text: data.message }];
+      
+    setConversationContext(
+      updatedTranscript.slice(-10).map(msg => `${msg.speaker}: ${msg.text}`)
+    );
+  },
     onError: (message: string) => {
       toast({
         title: "Feil",
