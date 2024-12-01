@@ -6,7 +6,11 @@ interface AudioProcessorProps {
   onVoiceActivityChange?: (isActive: boolean) => void;
 }
 
-const MIN_VOICE_DURATION = 100; // ms
+// Increased constants for more stringent voice detection
+const MIN_VOICE_DURATION = 300; // ms
+const VOICE_THRESHOLD = 0.05;
+const NOISE_FLOOR = 0.02;
+const DEBOUNCE_TIME = 500; // ms
 
 export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: AudioProcessorProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -14,7 +18,7 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: 
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastVoiceDetectionRef = useRef<number>(0);
-  let voiceDetectionTimeout: number;
+  const voiceDetectionTimeoutRef = useRef<number>(0);
 
   // Synchronous cleanup function
   const cleanup = () => {
@@ -30,6 +34,10 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: 
     if (audioContextRef.current?.state !== 'closed') {
       audioContextRef.current?.close();
       audioContextRef.current = null;
+    }
+    if (voiceDetectionTimeoutRef.current) {
+      clearTimeout(voiceDetectionTimeoutRef.current);
+      voiceDetectionTimeoutRef.current = 0;
     }
   };
 
@@ -66,26 +74,30 @@ export function AudioProcessor({ isActive, isSpeaking, onVoiceActivityChange }: 
 
           analyser.getFloatTimeDomainData(dataArray);
           
-          // Calculate RMS with adjusted sensitivity
+          // Calculate RMS with noise floor
           const rms = Math.sqrt(
             dataArray.reduce((acc, val) => acc + val * val, 0) / dataArray.length
           );
 
-          // Higher threshold for reduced sensitivity
-          const isVoiceActive = rms > 0.01;
-          
+          // More stringent voice detection logic
           const now = Date.now();
-          if (isVoiceActive) {
-            if (now - lastVoiceDetectionRef.current > MIN_VOICE_DURATION) {
+          const isVoiceActive = rms > VOICE_THRESHOLD && rms > NOISE_FLOOR;
+          
+          if (isVoiceActive && (now - lastVoiceDetectionRef.current > MIN_VOICE_DURATION)) {
+            if (!voiceDetectionTimeoutRef.current) {
               onVoiceActivityChange?.(true);
               lastVoiceDetectionRef.current = now;
             }
-            if (voiceDetectionTimeout) {
-              clearTimeout(voiceDetectionTimeout);
+            
+            // Reset debounce timer
+            if (voiceDetectionTimeoutRef.current) {
+              clearTimeout(voiceDetectionTimeoutRef.current);
             }
-            voiceDetectionTimeout = window.setTimeout(() => {
+            
+            voiceDetectionTimeoutRef.current = window.setTimeout(() => {
               onVoiceActivityChange?.(false);
-            }, 300) as unknown as number;
+              voiceDetectionTimeoutRef.current = 0;
+            }, DEBOUNCE_TIME) as unknown as number;
           }
 
           // Continue processing while mounted
