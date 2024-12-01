@@ -93,34 +93,36 @@ export function VoiceChat() {
             // Update transcript with completed message
             setTranscript(prev => {
               const filtered = prev.filter(msg => msg.text !== '...');
-              const newTranscript = [...filtered, {
-                speaker: 'Assistant',
+              return [...filtered, {
+                speaker: 'Assistant' as const,
                 text: data.message,
                 timestamp: Date.now()
               }];
-              
-              // Update context after transcript is updated
-              const recentMessages = newTranscript.slice(-10);
+            });
+            
+            // Update conversation context
+            setTranscript(prev => {
+              const recentMessages = prev.slice(-10);
               setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-              
-              return newTranscript;
+              return prev;
             });
           }
         }, 100);
       } else if (data.source === 'user') {
         setTranscript(prev => {
           const filtered = prev.filter(msg => msg.text !== '...');
-          const newTranscript = [...filtered, {
-            speaker: 'You',
+          return [...filtered, {
+            speaker: 'You' as const,
             text: data.message,
             timestamp: Date.now()
           }];
-          
-          // Update context after transcript is updated
-          const recentMessages = newTranscript.slice(-10);
+        });
+        
+        // Update conversation context
+        setTranscript(prev => {
+          const recentMessages = prev.slice(-10);
           setConversationContext(recentMessages.map(msg => `${msg.speaker}: ${msg.text}`));
-          
-          return newTranscript;
+          return prev;
         });
       }
     },
