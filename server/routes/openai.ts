@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { WebSocket, WebSocketServer } from 'ws';
+import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 
 const router = Router();
@@ -15,8 +15,6 @@ wsServer.on('connection', (ws) => {
 
   // Handle messages from client
   ws.on('message', async (message) => {
-    let azureWs: WebSocket | null = null;
-    
     try {
       const { text, history = [] } = JSON.parse(message.toString());
 
@@ -34,88 +32,75 @@ wsServer.on('connection', (ws) => {
         throw new Error('Azure OpenAI credentials are not configured');
       }
 
-      // Connect to Azure OpenAI API via WebSocket
-      const wsUrl = `${AZURE_OPENAI_ENDPOINT.replace('https://', 'wss://')}/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview`;
-      azureWs = new WebSocket(wsUrl, {
-        headers: {
-          'api-key': AZURE_OPENAI_KEY,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // Set up timeout for connection
-      const connectionTimeout = setTimeout(() => {
-        if (azureWs && azureWs.readyState !== WebSocket.OPEN) {
-          azureWs.close();
-          ws.send(JSON.stringify({
-            error: 'Connection timeout',
-            details: 'Could not establish connection to Azure OpenAI'
-          }));
-        }
-      }, 10000);
-
-      azureWs.on('open', () => {
-        console.log('Connected to Azure OpenAI');
-        clearTimeout(connectionTimeout);
-        
-        // Send the initial message with proper format
-        if (azureWs && azureWs.readyState === WebSocket.OPEN) {
-          azureWs.send(JSON.stringify({
+      // Make request to Azure OpenAI API
+      try {
+        const response = await fetch(`${AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-4/chat/completions?api-version=2023-12-01-preview`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': AZURE_OPENAI_KEY
+          },
+          body: JSON.stringify({
             messages,
-            stream: true,
             max_tokens: 1000,
             temperature: 0.7,
             frequency_penalty: 0,
             presence_penalty: 0,
-            top_p: 0.95
-          }));
-        }
-      });
-
-      azureWs.on('message', (data) => {
-        try {
-          const response = JSON.parse(data.toString());
-          
-          if (response.error) {
-            throw new Error(response.error.message || 'Unknown Azure API error');
-          }
-
-          if (response.choices && response.choices[0]?.delta?.content) {
-            ws.send(JSON.stringify({ 
-              content: response.choices[0].delta.content
-            }));
-          }
-        } catch (error) {
-          console.error('Error parsing Azure response:', error);
-          ws.send(JSON.stringify({ 
-            error: 'Failed to process response',
-            details: error instanceof Error ? error.message : 'Unknown error'
-          }));
-          if (azureWs) azureWs.close();
-        }
-      });
-
-      if (azureWs) {
-        azureWs.on('error', (error) => {
-          console.error('Azure WebSocket error:', error);
-          ws.send(JSON.stringify({ 
-            error: 'Azure OpenAI connection error',
-            details: error.message
-          }));
-          if (azureWs && azureWs.readyState === WebSocket.OPEN) {
-            azureWs.close();
-          }
+            top_p: 0.95,
+            stream: true
+          })
         });
-      }
 
-      azureWs.on('close', () => {
-        console.log('Azure WebSocket connection closed');
+        if (!response.ok) {
+          throw new Error(`Azure OpenAI API error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response stream available');
+        }
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Process the chunk and send to client
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim());
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonData = line.slice(6);
+              if (jsonData === '[DONE]') continue;
+
+              try {
+                const data = JSON.parse(jsonData);
+                if (data.choices && data.choices[0]?.delta?.content) {
+                  ws.send(JSON.stringify({
+                    content: data.choices[0].delta.content
+                  }));
+                }
+              } catch (e) {
+                console.error('Error parsing chunk:', e);
+              }
+            }
+          }
+        }
+
+        // Signal completion
         ws.send(JSON.stringify({ done: true }));
-      });
+
+      } catch (error) {
+        console.error('Azure API error:', error);
+        ws.send(JSON.stringify({
+          error: 'Failed to get response',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }));
+      }
 
     } catch (error) {
       console.error('Message processing error:', error);
-      ws.send(JSON.stringify({ 
+      ws.send(JSON.stringify({
         error: 'Failed to process message',
         details: error instanceof Error ? error.message : 'Unknown error'
       }));
