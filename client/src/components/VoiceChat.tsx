@@ -1,25 +1,21 @@
-import { useCallback, useState, useEffect, useRef } from 'react';
-import { useConversation } from '@11labs/react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface TranscriptMessage {
-  speaker: 'You' | 'InstaAI';  // Changed from 'Assistant' to 'InstaAI'
+  speaker: 'You' | 'InstaAI';
   text: string;
   timestamp?: number;
 }
 
 export function VoiceChat() {
   const { toast } = useToast();
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [agentId, setAgentId] = useState<string | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [conversationContext, setConversationContext] = useState<string[]>([]);
-  
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Add scroll into view effect
@@ -39,112 +35,108 @@ export function VoiceChat() {
       });
       return;
     }
-
-    // Fetch agent configuration
-    fetch('/api/elevenlabs/config')
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error);
-        setAgentId(data.agentId);
-      })
-      .catch(error => {
-        toast({
-          title: "Konfigurasjonsfeil",
-          description: "Kunne ikke laste inn nødvendig konfigurasjon",
-          variant: "destructive",
-        });
-      });
   }, [toast]);
 
-  const conversation = useConversation({
-    onConnect: () => {
-      setIsInitializing(false);
-      // Only show Norwegian welcome message if transcript is empty
-      if (transcript.length === 0) {
-        setTranscript([{
-          speaker: 'InstaAI',
-          text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
-        }]);
+  useEffect(() => {
+    // Show welcome message on first load
+    if (transcript.length === 0) {
+      setTranscript([{
+        speaker: 'InstaAI',
+        text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
+      }]);
+    }
+  }, []);
+
+  const sendMessage = async (text: string) => {
+    try {
+      if (!text.trim()) return;
+      
+      // Add user message to transcript
+      setTranscript(prev => [...prev, {
+        speaker: 'You',
+        text: text,
+        timestamp: Date.now()
+      }]);
+
+      // Create streaming request
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: text,
+          history: conversationContext
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
       }
-    },
-    onDisconnect: () => {
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response reader available');
+      }
+
+      let currentMessage = '';
+      
+      // Add placeholder for assistant response
       setTranscript(prev => [...prev, {
         speaker: 'InstaAI',
-        text: 'Samtalen er avsluttet. Takk for praten!'
+        text: '',
+        timestamp: Date.now()
       }]);
-    },
-    onMessage: (data: { message: string; source: string }) => {
-    // Prevent duplicate welcome messages
-    if (data.message.toLowerCase().includes('welcome to instabank') && 
-        data.source === 'user') {
-      return;
-    }
-    
-    setTranscript(prev => {
-      const filteredMessages = prev.filter(msg => msg.text !== '...');
-      return [
-        ...filteredMessages,
-        {
-          speaker: data.source === 'user' ? 'You' : 'InstaAI',
-          text: data.message,
-          timestamp: Date.now()
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
         }
-      ];
-    });
 
-    // Update conversation context
-    setConversationContext(prev => {
-      const updatedTranscript = transcript.slice(-10);
-      return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
-    });
-  },
-    onError: (message: string) => {
-      toast({
-        title: "Feil",
-        description: message,
-        variant: "destructive",
-      });
-      setIsInitializing(false);
-    },
-  });
-
-  const startConversation = useCallback(async () => {
-    if (!agentId) {
-      toast({
-        title: "Konfigurasjonsfeil",
-        description: "Mangler nødvendig konfigurasjon for å starte samtalen",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsInitializing(true);
-      
-      // Start conversation session
-      await conversation.startSession({
-        agentId: agentId,
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: conversationContext.join('\n')
+        // Decode the stream
+        const text = new TextDecoder().decode(value);
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.done) continue;
+              
+              currentMessage += data.content;
+              
+              // Update the last message in transcript
+              setTranscript(prev => {
+                const newTranscript = [...prev];
+                if (newTranscript[newTranscript.length - 1].speaker === 'InstaAI') {
+                  newTranscript[newTranscript.length - 1].text = currentMessage;
+                }
+                return newTranscript;
+              });
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
             }
           }
         }
+      }
+
+      // Update conversation context
+      setConversationContext(prev => {
+        const updatedTranscript = transcript.slice(-10);
+        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
       });
+
     } catch (error) {
+      console.error('Failed to send message:', error);
       toast({
         title: "Feil",
-        description: error instanceof Error ? error.message : "Kunne ikke starte samtalen. Vennligst prøv igjen.",
+        description: "Kunne ikke sende meldingen. Vennligst prøv igjen.",
         variant: "destructive",
       });
-      setIsInitializing(false);
     }
-  }, [conversation, toast, agentId, conversationContext]);
-
-  const stopConversation = useCallback(async () => {
-    await conversation.endSession();
-  }, [conversation]);
+  };
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -158,13 +150,12 @@ export function VoiceChat() {
             {message.text}
           </div>
         ))}
-        
       </div>
 
       <div className="w-full">
         <ErrorBoundary>
           <AudioProcessor 
-            isActive={conversation.status === 'connected'}
+            isActive={true}
             onVoiceActivityChange={(active) => {
               console.log('Voice activity changed:', active);
               setIsUserSpeaking(active);
@@ -181,7 +172,7 @@ export function VoiceChat() {
                 }
               }
             }}
-            isSpeaking={conversation.isSpeaking}
+            isSpeaking={false}
           />
         </ErrorBoundary>
       </div>
@@ -195,73 +186,22 @@ export function VoiceChat() {
             onKeyPress={async (e) => {
               if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                 const text = e.currentTarget.value.trim();
-                // Add the user message to transcript immediately
-                setTranscript(prev => [...prev, {
-                  speaker: 'You',
-                  text: text,
-                  timestamp: Date.now()
-                }]);
                 e.currentTarget.value = '';
-                try {
-                  if (conversation.status !== 'connected') {
-                    await startConversation();
-                  }
-                  // Send text using the correct API method
-                  await conversation.sendMessage({
-                    text: text,
-                    mode: 'text',
-                    history: conversationContext
-                  });
-                } catch (error) {
-                  console.error('Failed to send message:', error);
-                  toast({
-                    title: "Feil",
-                    description: "Kunne ikke sende meldingen. Vennligst prøv igjen.",
-                    variant: "destructive",
-                  });
-                }
+                await sendMessage(text);
               }
             }}
           />
-          <Button
-            onClick={conversation.status === 'connected' ? stopConversation : startConversation}
-            disabled={isInitializing}
-            className="bg-[#4CAF50] hover:bg-[#45a049] rounded-full px-6"
-          >
-            {conversation.status === 'connected' ? (
-              <>
-                <PhoneOff className="w-4 h-4 mr-2" />
-                Avslutt
-              </>
-            ) : isInitializing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Kobler til...
-              </>
-            ) : (
-              <>
-                <Phone className="w-4 h-4 mr-2" />
-                Start tale
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
       <div className="text-sm text-gray-500 text-center">
-        {conversation.status === 'connected' ? (
-          conversation.isSpeaking ? (
-            'Assistenten snakker...'
-          ) : isUserSpeaking ? (
-            <span className="flex items-center justify-center gap-2">
-              <Mic className="w-4 h-4 text-green-500 animate-pulse" />
-              Du snakker...
-            </span>
-          ) : (
-            'Assistenten lytter...'
-          )
+        {isUserSpeaking ? (
+          <span className="flex items-center justify-center gap-2">
+            <Mic className="w-4 h-4 text-green-500 animate-pulse" />
+            Du snakker...
+          </span>
         ) : (
-          'Klar til å starte samtale'
+          'Assistenten lytter...'
         )}
       </div>
     </div>
