@@ -115,22 +115,7 @@ export function VoiceChat() {
 
     try {
       setIsInitializing(true);
-      setTranscript([]);
       
-      // Request microphone access
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (error) {
-        if (error instanceof DOMException) {
-          if (error.name === 'NotAllowedError') {
-            throw new Error('Mikrofontilgang ble nektet. Vennligst gi tilgang til mikrofonen for å starte samtalen.');
-          } else if (error.name === 'NotFoundError') {
-            throw new Error('Ingen mikrofon funnet. Vennligst koble til en mikrofon og prøv igjen.');
-          }
-        }
-        throw error;
-      }
-
       // Start conversation session
       await conversation.startSession({
         agentId: agentId,
@@ -150,7 +135,7 @@ export function VoiceChat() {
       });
       setIsInitializing(false);
     }
-  }, [conversation, toast, agentId]);
+  }, [conversation, toast, agentId, conversationContext]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
@@ -216,7 +201,8 @@ export function VoiceChat() {
                   if (conversation.status !== 'connected') {
                     await startConversation();
                   }
-                  await conversation.startTextInput(text);
+                  // Use the correct method from ElevenLabs API to send text
+                  await conversation.send(text);
                 } catch (error) {
                   console.error('Failed to send message:', error);
                   toast({
