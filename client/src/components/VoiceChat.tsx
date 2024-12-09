@@ -47,9 +47,79 @@ export function VoiceChat() {
     }
   }, []);
 
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/chat`;
+    const websocket = new WebSocket(wsUrl);
+    
+    websocket.onopen = () => {
+      console.log('WebSocket connected');
+      setIsConnected(true);
+    };
+
+    websocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.error) {
+          toast({
+            title: "Feil",
+            description: data.details || "En feil oppstod under samtalen.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data.content) {
+          setTranscript(prev => {
+            const newTranscript = [...prev];
+            const lastMessage = newTranscript[newTranscript.length - 1];
+            
+            if (lastMessage && lastMessage.speaker === 'InstaAI') {
+              lastMessage.text += data.content;
+            } else {
+              newTranscript.push({
+                speaker: 'InstaAI',
+                text: data.content,
+                timestamp: Date.now()
+              });
+            }
+            
+            return newTranscript;
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing WebSocket message:', e);
+      }
+    };
+
+    websocket.onclose = () => {
+      console.log('WebSocket disconnected');
+      setIsConnected(false);
+    };
+
+    websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      toast({
+        title: "Tilkoblingsfeil",
+        description: "Kunne ikke koble til samtalen. Vennligst prøv igjen.",
+        variant: "destructive",
+      });
+    };
+
+    setWs(websocket);
+
+    return () => {
+      websocket.close();
+    };
+  }, []);
+
   const sendMessage = async (text: string) => {
     try {
-      if (!text.trim()) return;
+      if (!text.trim() || !ws) return;
       
       // Add user message to transcript
       setTranscript(prev => [...prev, {
@@ -58,69 +128,18 @@ export function VoiceChat() {
         timestamp: Date.now()
       }]);
 
-      // Create streaming request
-      const response = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: text,
-          history: conversationContext
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response reader available');
-      }
-
-      let currentMessage = '';
-      
-      // Add placeholder for assistant response
+      // Add empty assistant message
       setTranscript(prev => [...prev, {
         speaker: 'InstaAI',
         text: '',
         timestamp: Date.now()
       }]);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          break;
-        }
-
-        // Decode the stream
-        const text = new TextDecoder().decode(value);
-        const lines = text.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.done) continue;
-              
-              currentMessage += data.content;
-              
-              // Update the last message in transcript
-              setTranscript(prev => {
-                const newTranscript = [...prev];
-                if (newTranscript[newTranscript.length - 1].speaker === 'InstaAI') {
-                  newTranscript[newTranscript.length - 1].text = currentMessage;
-                }
-                return newTranscript;
-              });
-            } catch (e) {
-              console.error('Error parsing SSE data:', e);
-            }
-          }
-        }
-      }
+      // Send message through WebSocket
+      ws.send(JSON.stringify({
+        text,
+        history: conversationContext
+      }));
 
       // Update conversation context
       setConversationContext(prev => {
