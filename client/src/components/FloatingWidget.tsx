@@ -11,7 +11,7 @@ export function FloatingWidget() {
     <div className="fixed bottom-4 right-4 z-50">
       {isExpanded ? (
         <div className={cn(
-          "bg-white rounded-[20px] shadow-lg w-[320px]",
+          "bg-white rounded-[20px] shadow-lg w-[400px]",
           "transform transition-all duration-300 ease-in-out",
           "border border-gray-100"
         )}>

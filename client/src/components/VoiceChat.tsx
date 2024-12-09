@@ -160,7 +160,7 @@ export function VoiceChat() {
     <div className="flex flex-col items-center gap-4">
       <div 
         ref={transcriptRef}
-        className="w-full h-[200px] bg-gray-50 rounded-md p-3 overflow-y-auto"
+        className="w-full h-[300px] bg-gray-50 rounded-md p-4 overflow-y-auto"
       >
         {transcript.map((message, index) => (
           <div key={index} className="mb-2">
@@ -196,22 +196,31 @@ export function VoiceChat() {
         </ErrorBoundary>
       </div>
 
-      <div className="w-full flex justify-center">
-        {conversation.status === 'connected' ? (
+      <div className="w-full space-y-4">
+        <div className="flex w-full gap-2">
+          <input
+            type="text"
+            placeholder="Skriv en melding..."
+            className="flex-1 px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                // Send text message
+                conversation.sendUserMessage(e.currentTarget.value);
+                e.currentTarget.value = '';
+              }
+            }}
+          />
           <Button
-            onClick={stopConversation}
-            className="bg-black hover:bg-gray-800 rounded-full px-8"
-          >
-            <PhoneOff className="w-4 h-4 mr-2" />
-            Avslutt samtale
-          </Button>
-        ) : (
-          <Button
-            onClick={startConversation}
+            onClick={conversation.status === 'connected' ? stopConversation : startConversation}
             disabled={isInitializing}
-            className="bg-black hover:bg-gray-800 rounded-full px-8"
+            className="bg-[#4CAF50] hover:bg-[#45a049] rounded-full px-6"
           >
-            {isInitializing ? (
+            {conversation.status === 'connected' ? (
+              <>
+                <PhoneOff className="w-4 h-4 mr-2" />
+                Avslutt
+              </>
+            ) : isInitializing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Kobler til...
@@ -219,11 +228,11 @@ export function VoiceChat() {
             ) : (
               <>
                 <Phone className="w-4 h-4 mr-2" />
-                Start samtale
+                Start tale
               </>
             )}
           </Button>
-        )}
+        </div>
       </div>
 
       <div className="text-sm text-gray-500 text-center">
