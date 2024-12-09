@@ -2,7 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
-import { attachWebSocket } from "./routes/openai";
 
 function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -52,9 +51,6 @@ app.use((req, res, next) => {
 (async () => {
   registerRoutes(app);
   const server = createServer(app);
-  
-  // Attach WebSocket handler
-  attachWebSocket(server);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
