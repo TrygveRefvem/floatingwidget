@@ -59,14 +59,19 @@ export function VoiceChat() {
   const conversation = useConversation({
     onConnect: () => {
       setIsInitializing(false);
-      // Only show Norwegian welcome message
-      setTranscript([{
-        speaker: 'InstaAI',  // Changed from 'Assistant' to 'InstaAI'
-        text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
-      }]);
+      // Only show Norwegian welcome message if transcript is empty
+      if (transcript.length === 0) {
+        setTranscript([{
+          speaker: 'InstaAI',
+          text: 'Hei! Hvordan kan jeg hjelpe deg i dag?'
+        }]);
+      }
     },
     onDisconnect: () => {
-      // Connection status is shown in the UI
+      setTranscript(prev => [...prev, {
+        speaker: 'InstaAI',
+        text: 'Samtalen er avsluttet. Takk for praten!'
+      }]);
     },
     onMessage: (data: { message: string; source: string }) => {
     // Prevent duplicate welcome messages
@@ -201,8 +206,12 @@ export function VoiceChat() {
                   if (conversation.status !== 'connected') {
                     await startConversation();
                   }
-                  // Use the correct method from ElevenLabs API to send text
-                  await conversation.send(text);
+                  // Send text using the correct API method
+                  await conversation.sendMessage({
+                    text: text,
+                    mode: 'text',
+                    history: conversationContext
+                  });
                 } catch (error) {
                   console.error('Failed to send message:', error);
                   toast({
