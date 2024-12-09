@@ -162,9 +162,9 @@ export function VoiceChat() {
           <div key={index} className="flex items-start gap-2 mb-4">
             {message.speaker === 'Magnus' ? (
               <img 
-                src="/assistant-avatar.png"
-                alt="Magnus"
-                className="w-8 h-8 rounded-full object-cover"
+                src="/instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png"
+                alt="Maia"
+                className="w-8 h-8 rounded-full object-cover border border-gray-100 shadow-sm"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">

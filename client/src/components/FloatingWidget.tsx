@@ -46,7 +46,7 @@ export function FloatingWidget() {
           )}
         >
           <img 
-            src="/assistant-avatar.png" 
+            src="/instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
             alt="AI Assistant"
             className="h-14 w-14 rounded-full object-cover border-2 border-white shadow-sm transform scale-90" 
           />
