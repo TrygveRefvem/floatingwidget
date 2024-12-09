@@ -212,12 +212,11 @@ export function VoiceChat() {
                   timestamp: Date.now()
                 }]);
                 e.currentTarget.value = '';
-                // Start a new session if not connected
                 try {
                   if (conversation.status !== 'connected') {
                     await startConversation();
                   }
-                  await conversation.send({ text, source: 'user' });
+                  await conversation.startTextInput(text);
                 } catch (error) {
                   console.error('Failed to send message:', error);
                   toast({
