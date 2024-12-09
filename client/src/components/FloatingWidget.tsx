@@ -38,16 +38,17 @@ export function FloatingWidget() {
         <Button
           onClick={() => setIsExpanded(true)}
           className={cn(
-            "h-16 w-16 rounded-full shadow-lg",
+            "h-[68px] w-[68px] rounded-full shadow-lg p-0.5",
             "bg-[#4CAF50] hover:bg-[#45a049]",
+            "border-2 border-white",
             "transform transition-all duration-300 ease-in-out",
             "flex items-center justify-center p-0"
           )}
         >
           <img 
-            src="/smalllogo.png" 
-            alt="iB"
-            className="h-10 w-10 object-contain" 
+            src="/assistant-avatar.webp" 
+            alt="AI Assistant"
+            className="h-12 w-12 rounded-full object-cover" 
           />
         </Button>
       )}
