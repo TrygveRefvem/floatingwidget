@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Phone, PhoneOff, Loader2, Mic } from 'lucide-react';
 import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
-import { cn } from '@/lib/utils';
 
 interface TranscriptMessage {
   speaker: 'You' | 'Maia';
@@ -70,30 +69,30 @@ export function VoiceChat() {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-    // Prevent duplicate welcome messages
-    if (data.message.toLowerCase().includes('welcome to instabank') && 
-        data.source === 'user') {
-      return;
-    }
-    
-    setTranscript(prev => {
-      const filteredMessages = prev.filter(msg => msg.text !== '...');
-      return [
-        ...filteredMessages,
-        {
-          speaker: data.source === 'user' ? 'You' : 'Maia',
-          text: data.message,
-          timestamp: Date.now()
-        }
-      ];
-    });
+      // Prevent duplicate welcome messages
+      if (data.message.toLowerCase().includes('welcome to instabank') && 
+          data.source === 'user') {
+        return;
+      }
+      
+      setTranscript(prev => {
+        const filteredMessages = prev.filter(msg => msg.text !== '...');
+        return [
+          ...filteredMessages,
+          {
+            speaker: data.source === 'user' ? 'You' : 'Maia',
+            text: data.message,
+            timestamp: Date.now()
+          }
+        ];
+      });
 
-    // Update conversation context
-    setConversationContext(prev => {
-      const updatedTranscript = transcript.slice(-10);
-      return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
-    });
-  },
+      // Update conversation context
+      setConversationContext(prev => {
+        const updatedTranscript = transcript.slice(-10);
+        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
+      });
+    },
     onError: (message: string) => {
       toast({
         title: "Feil",
@@ -164,30 +163,11 @@ export function VoiceChat() {
         className="w-full h-[300px] bg-gray-50 rounded-md p-4 overflow-y-auto"
       >
         {transcript.map((message, index) => (
-          <div key={index} className="mb-4 flex items-start gap-3">
-            {message.speaker === 'Maia' && (
-              <img 
-                src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png"
-                alt="Maia"
-                className="h-8 w-8 rounded-full object-cover" 
-              />
-            )}
-            <div className={cn(
-              "flex-1 px-4 py-2 rounded-lg",
-              message.speaker === 'Maia' 
-                ? "bg-[#f5f5f5] rounded-tl-none" 
-                : "bg-[#4CAF50] text-white rounded-tr-none ml-auto"
-            )}>
-              {message.text}
-            </div>
-            {message.speaker === 'You' && (
-              <div className="h-8 w-8 rounded-full bg-[#4CAF50] flex items-center justify-center text-white">
-                <span className="text-sm">Du</span>
-              </div>
-            )}
+          <div key={index} className="mb-2">
+            <span className="font-medium">{message.speaker}: </span>
+            {message.text}
           </div>
         ))}
-        
       </div>
 
       <div className="w-full">

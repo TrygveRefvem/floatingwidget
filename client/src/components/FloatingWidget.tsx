@@ -17,17 +17,11 @@ export function FloatingWidget() {
         )}>
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <img 
-                  src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
-                  alt="Maia" 
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="font-semibold text-sm">Maia</h3>
-                  <p className="text-xs text-gray-500">Bankassistent</p>
-                </div>
-              </div>
+              <img 
+                src="/logobank.png" 
+                alt="Instabank" 
+                className="h-8"
+              />
               <Button
                 variant="ghost"
                 size="icon"
@@ -52,8 +46,8 @@ export function FloatingWidget() {
           )}
         >
           <img 
-            src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
-            alt="Maia"
+            src="/assistant-avatar.webp" 
+            alt="AI Assistant"
             className="h-12 w-12 rounded-full object-cover" 
           />
         </Button>
