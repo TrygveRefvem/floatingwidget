@@ -7,7 +7,7 @@ import { AudioProcessor } from './AudioProcessor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface TranscriptMessage {
-  speaker: 'You' | 'Maia';
+  speaker: 'You' | 'Magnus';
   text: string;
   timestamp?: number;
 }
@@ -59,40 +59,36 @@ export function VoiceChat() {
   const conversation = useConversation({
     onConnect: () => {
       setIsInitializing(false);
-      // Only show Norwegian welcome message
-      setTranscript([{
-        speaker: 'Maia',
-        text: 'Hei! Jeg er Maia, din personlige bankassistent. Hvordan kan jeg hjelpe deg i dag?'
-      }]);
+      setTranscript([]); // Start with empty transcript
     },
     onDisconnect: () => {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-    // Prevent duplicate welcome messages
-    if (data.message.toLowerCase().includes('welcome to instabank') && 
-        data.source === 'user') {
-      return;
-    }
-    
-    setTranscript(prev => {
-      const filteredMessages = prev.filter(msg => msg.text !== '...');
-      return [
-        ...filteredMessages,
-        {
-          speaker: data.source === 'user' ? 'You' : 'Maia',
-          text: data.message,
-          timestamp: Date.now()
-        }
-      ];
-    });
+      // Prevent duplicate welcome messages
+      if (data.message.toLowerCase().includes('welcome to instabank') && 
+          data.source === 'user') {
+        return;
+      }
+      
+      setTranscript(prev => {
+        const filteredMessages = prev.filter(msg => msg.text !== '...');
+        return [
+          ...filteredMessages,
+          {
+            speaker: data.source === 'user' ? 'You' : 'Magnus',
+            text: data.message,
+            timestamp: Date.now()
+          }
+        ];
+      });
 
-    // Update conversation context
-    setConversationContext(prev => {
-      const updatedTranscript = transcript.slice(-10);
-      return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
-    });
-  },
+      // Update conversation context
+      setConversationContext(prev => {
+        const updatedTranscript = transcript.slice(-10);
+        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
+      });
+    },
     onError: (message: string) => {
       toast({
         title: "Feil",
@@ -163,9 +159,22 @@ export function VoiceChat() {
         className="w-full h-[300px] bg-gray-50 rounded-md p-4 overflow-y-auto"
       >
         {transcript.map((message, index) => (
-          <div key={index} className="mb-2">
-            <span className="font-medium">{message.speaker}: </span>
-            {message.text}
+          <div key={index} className="flex items-start gap-2 mb-4">
+            {message.speaker === 'Magnus' ? (
+              <img 
+                src="/assistant-avatar.png"
+                alt="Magnus"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-sm text-gray-600">You</span>
+              </div>
+            )}
+            <div className="flex-1">
+              <div className="text-sm text-gray-600 mb-1">{message.speaker}</div>
+              <div>{message.text}</div>
+            </div>
           </div>
         ))}
         
