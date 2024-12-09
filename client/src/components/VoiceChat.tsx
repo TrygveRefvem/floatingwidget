@@ -60,36 +60,39 @@ export function VoiceChat() {
     onConnect: () => {
       setIsInitializing(false);
       // Only show Norwegian welcome message
-      // Let the API provide the welcome message
+      setTranscript([{
+        speaker: 'Maia',
+        text: 'Hei! Jeg er Maia, din personlige bankassistent. Hvordan kan jeg hjelpe deg i dag?'
+      }]);
     },
     onDisconnect: () => {
       // Connection status is shown in the UI
     },
     onMessage: (data: { message: string; source: string }) => {
-      // Prevent duplicate welcome messages
-      if (data.message.toLowerCase().includes('welcome to instabank') && 
-          data.source === 'user') {
-        return;
-      }
-      
-      setTranscript(prev => {
-        const filteredMessages = prev.filter(msg => msg.text !== '...');
-        return [
-          ...filteredMessages,
-          {
-            speaker: data.source === 'user' ? 'You' : 'Maia',
-            text: data.message,
-            timestamp: Date.now()
-          }
-        ];
-      });
+    // Prevent duplicate welcome messages
+    if (data.message.toLowerCase().includes('welcome to instabank') && 
+        data.source === 'user') {
+      return;
+    }
+    
+    setTranscript(prev => {
+      const filteredMessages = prev.filter(msg => msg.text !== '...');
+      return [
+        ...filteredMessages,
+        {
+          speaker: data.source === 'user' ? 'You' : 'Maia',
+          text: data.message,
+          timestamp: Date.now()
+        }
+      ];
+    });
 
-      // Update conversation context
-      setConversationContext(prev => {
-        const updatedTranscript = transcript.slice(-10);
-        return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
-      });
-    },
+    // Update conversation context
+    setConversationContext(prev => {
+      const updatedTranscript = transcript.slice(-10);
+      return updatedTranscript.map(msg => `${msg.speaker}: ${msg.text}`);
+    });
+  },
     onError: (message: string) => {
       toast({
         title: "Feil",
@@ -165,6 +168,7 @@ export function VoiceChat() {
             {message.text}
           </div>
         ))}
+        
       </div>
 
       <div className="w-full">
@@ -238,4 +242,3 @@ export function VoiceChat() {
     </div>
   );
 }
-
