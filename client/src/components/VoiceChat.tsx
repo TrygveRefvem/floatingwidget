@@ -105,9 +105,31 @@ export function VoiceChat() {
       console.error('WebSocket error:', error);
       toast({
         title: "Tilkoblingsfeil",
-        description: "Kunne ikke koble til samtalen. Vennligst prøv igjen.",
+        description: "Det oppstod en feil under tilkoblingen til samtalen. Dette kan skyldes nettverksproblemer eller at tjenesten er utilgjengelig. Vennligst prøv igjen senere.",
         variant: "destructive",
+        duration: 5000,
       });
+    };
+
+    // Add reconnection logic
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 3;
+
+    const tryReconnect = () => {
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++;
+        setTimeout(() => {
+          console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
+          const newWs = new WebSocket(wsUrl);
+          setWs(newWs);
+        }, 2000 * reconnectAttempts); // Exponential backoff
+      }
+    };
+
+    websocket.onclose = () => {
+      console.log('WebSocket disconnected');
+      setIsConnected(false);
+      tryReconnect();
     };
 
     setWs(websocket);

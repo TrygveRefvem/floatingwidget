@@ -15,11 +15,14 @@ wsServer.on('connection', (ws) => {
 
   // Handle messages from client
   ws.on('message', async (message) => {
+    let azureWs: WebSocket | null = null;
+    
     try {
       const { text, history = [] } = JSON.parse(message.toString());
 
-      // Prepare messages array
+      // Prepare messages array with system message
       const messages = [
+        { role: 'system', content: 'You are InstaAI, a helpful and friendly banking assistant. You communicate in Norwegian and help customers with their banking needs.' },
         ...history.map((msg: { speaker: string; text: string }) => ({
           role: msg.speaker.toLowerCase() === 'you' ? 'user' : 'assistant',
           content: msg.text
@@ -27,25 +30,57 @@ wsServer.on('connection', (ws) => {
         { role: 'user', content: text }
       ];
 
-      // Connect to Azure OpenAI Realtime API
-      const wsUrl = `${AZURE_OPENAI_ENDPOINT.replace('https://', 'wss://')}/openai/realtime?api-version=2024-10-01-preview&deployment=gpt-4o-realtime-preview`;
-      const azureWs = new WebSocket(wsUrl, {
+      if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_KEY) {
+        throw new Error('Azure OpenAI credentials are not configured');
+      }
+
+      // Connect to Azure OpenAI API via WebSocket
+      const wsUrl = `${AZURE_OPENAI_ENDPOINT.replace('https://', 'wss://')}/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview`;
+      azureWs = new WebSocket(wsUrl, {
         headers: {
-          'api-key': AZURE_OPENAI_KEY!
+          'api-key': AZURE_OPENAI_KEY,
+          'Content-Type': 'application/json'
         }
       });
 
+      // Set up timeout for connection
+      const connectionTimeout = setTimeout(() => {
+        if (azureWs && azureWs.readyState !== WebSocket.OPEN) {
+          azureWs.close();
+          ws.send(JSON.stringify({
+            error: 'Connection timeout',
+            details: 'Could not establish connection to Azure OpenAI'
+          }));
+        }
+      }, 10000);
+
       azureWs.on('open', () => {
-        // Send the initial message
-        azureWs.send(JSON.stringify({ messages }));
+        console.log('Connected to Azure OpenAI');
+        clearTimeout(connectionTimeout);
+        
+        // Send the initial message with proper format
+        if (azureWs && azureWs.readyState === WebSocket.OPEN) {
+          azureWs.send(JSON.stringify({
+            messages,
+            stream: true,
+            max_tokens: 1000,
+            temperature: 0.7,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            top_p: 0.95
+          }));
+        }
       });
 
       azureWs.on('message', (data) => {
         try {
-          // Parse Azure's response and extract content
           const response = JSON.parse(data.toString());
+          
+          if (response.error) {
+            throw new Error(response.error.message || 'Unknown Azure API error');
+          }
+
           if (response.choices && response.choices[0]?.delta?.content) {
-            // Forward the content to the client
             ws.send(JSON.stringify({ 
               content: response.choices[0].delta.content
             }));
@@ -53,22 +88,28 @@ wsServer.on('connection', (ws) => {
         } catch (error) {
           console.error('Error parsing Azure response:', error);
           ws.send(JSON.stringify({ 
-            error: 'Failed to parse Azure response',
+            error: 'Failed to process response',
             details: error instanceof Error ? error.message : 'Unknown error'
           }));
+          if (azureWs) azureWs.close();
         }
       });
 
-      azureWs.on('error', (error) => {
-        console.error('Azure WebSocket error:', error);
-        ws.send(JSON.stringify({ 
-          error: 'Azure OpenAI connection error',
-          details: error.message
-        }));
-        azureWs.close();
-      });
+      if (azureWs) {
+        azureWs.on('error', (error) => {
+          console.error('Azure WebSocket error:', error);
+          ws.send(JSON.stringify({ 
+            error: 'Azure OpenAI connection error',
+            details: error.message
+          }));
+          if (azureWs && azureWs.readyState === WebSocket.OPEN) {
+            azureWs.close();
+          }
+        });
+      }
 
       azureWs.on('close', () => {
+        console.log('Azure WebSocket connection closed');
         ws.send(JSON.stringify({ done: true }));
       });
 
