@@ -60,10 +60,7 @@ export function VoiceChat() {
     onConnect: () => {
       setIsInitializing(false);
       // Only show Norwegian welcome message
-      setTranscript([{
-        speaker: 'Maia',
-        text: 'Hei! Jeg er Maia, din personlige bankassistent. Hvordan kan jeg hjelpe deg i dag?'
-      }]);
+      // Let the API provide the welcome message
     },
     onDisconnect: () => {
       // Connection status is shown in the UI
@@ -241,3 +238,4 @@ export function VoiceChat() {
     </div>
   );
 }
+
