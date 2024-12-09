@@ -19,7 +19,7 @@ export function FloatingWidget() {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <img 
-                  src="./DALL·E 2024-12-09 09.48.43 - A photorealistic profile picture of a customer service representative. The woman, named Maia, is between 30-40 years old, with a warm, friendly smile.webp" 
+                  src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
                   alt="Maia" 
                   className="h-8 w-8 rounded-full object-cover"
                 />
@@ -52,7 +52,7 @@ export function FloatingWidget() {
           )}
         >
           <img 
-            src="./DALL·E 2024-12-09 09.48.43 - A photorealistic profile picture of a customer service representative. The woman, named Maia, is between 30-40 years old, with a warm, friendly smile.webp" 
+            src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
             alt="Maia"
             className="h-12 w-12 rounded-full object-cover" 
           />
