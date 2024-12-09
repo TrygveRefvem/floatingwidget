@@ -202,11 +202,27 @@ export function VoiceChat() {
             type="text"
             placeholder="Skriv en melding..."
             className="flex-1 px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
-            onKeyPress={(e) => {
+            onKeyPress={async (e) => {
               if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                // Send text message using the conversation's send method
-                conversation.send(e.currentTarget.value);
+                const text = e.currentTarget.value.trim();
+                // Add the user message to transcript immediately
+                setTranscript(prev => [...prev, {
+                  speaker: 'You',
+                  text: text,
+                  timestamp: Date.now()
+                }]);
                 e.currentTarget.value = '';
+                // Start text input session
+                try {
+                  await conversation.startTextInput(text);
+                } catch (error) {
+                  console.error('Failed to send message:', error);
+                  toast({
+                    title: "Feil",
+                    description: "Kunne ikke sende meldingen. Vennligst prøv igjen.",
+                    variant: "destructive",
+                  });
+                }
               }
             }}
           />
