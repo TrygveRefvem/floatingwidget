@@ -204,8 +204,8 @@ export function VoiceChat() {
             className="flex-1 px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
             onKeyPress={(e) => {
               if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                // Send text message
-                conversation.sendUserMessage(e.currentTarget.value);
+                // Send text message using the conversation's send method
+                conversation.send(e.currentTarget.value);
                 e.currentTarget.value = '';
               }
             }}
