@@ -46,8 +46,8 @@ export function FloatingWidget() {
           )}
         >
           <img 
-            src="/assistant-avatar.webp" 
-            alt="AI Assistant"
+            src="/instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png" 
+            alt="Maia"
             className="h-12 w-12 rounded-full object-cover" 
           />
         </Button>
