@@ -169,23 +169,20 @@ export function VoiceChat() {
               <img 
                 src="./instabankmarketing_Create_a_high_definition_Norwegian_custome_2f501652-1e6c-4fab-a650-6b1264fd9be3_3.png"
                 alt="Maia"
-                className="h-8 w-8 rounded-full object-cover shadow-sm" 
+                className="h-8 w-8 rounded-full object-cover" 
               />
             )}
             <div className={cn(
               "flex-1 px-4 py-2 rounded-lg",
               message.speaker === 'Maia' 
-                ? "bg-green-50 rounded-tl-none" 
-                : "bg-gray-100 rounded-tr-none ml-auto"
+                ? "bg-[#f5f5f5] rounded-tl-none" 
+                : "bg-[#4CAF50] text-white rounded-tr-none ml-auto"
             )}>
-              <span className="font-medium text-sm text-gray-600 block mb-1">
-                {message.speaker}
-              </span>
               {message.text}
             </div>
             {message.speaker === 'You' && (
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-sm">You</span>
+              <div className="h-8 w-8 rounded-full bg-[#4CAF50] flex items-center justify-center text-white">
+                <span className="text-sm">Du</span>
               </div>
             )}
           </div>
